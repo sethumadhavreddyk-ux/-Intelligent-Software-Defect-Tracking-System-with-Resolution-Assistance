@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: defect_tracker_db
+    restart: always
+    environment:
+      POSTGRES_USER: defect_admin
+      POSTGRES_PASSWORD: DefectSecretPassword2026!
+      POSTGRES_DB: defect_tracking_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U defect_admin -d defect_tracking_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: defect_tracker_api
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://defect_admin:DefectSecretPassword2026!@db:5432/defect_tracking_db
+      SECRET_KEY: production-capstone-jwt-key-2026-super-secure
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      ENABLE_SEED_DATA: "true"
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/app:/app/app
+      - ./frontend:/frontend
+
+volumes:
+  postgres_data:

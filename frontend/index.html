@@ -1,0 +1,2678 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BugFlow - Intelligent Software Defect Tracking System with Resolution Assistance</title>
+  <meta name="description" content="AI-Powered Defect Tracking Platform with Automated Resolution Assistance, Similarity Detection, Root Cause Analysis, and Sprint Health Evaluation.">
+
+  <!-- Google Fonts & Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Chart.js 4.4 -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+
+  <!-- Main Stylesheet -->
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+  <!-- Toast Notification Stack -->
+  <div id="toast-container"></div>
+
+  <!-- Master App Container -->
+  <div id="app-container">
+    
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="brand-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="m8 2 1.88 1.88"></path>
+            <path d="M14.12 3.88 16 2"></path>
+            <path d="M9 7.13v-1a3.003 3.003 0 1 1 6 0v1"></path>
+            <path d="M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6"></path>
+            <path d="M12 20v-9"></path>
+            <path d="M6.53 9C4.6 8.8 3 7.1 3 5"></path>
+            <path d="M6 13H2"></path>
+            <path d="M3 21c0-2.1 1.7-3.9 3.8-4"></path>
+            <path d="M20.97 5c0 2.1-1.6 3.8-3.5 4"></path>
+            <path d="M22 13h-4"></path>
+            <path d="M17.2 17c2.1.1 3.8 1.9 3.8 4"></path>
+          </svg>
+        </div>
+        <div>
+          <div class="brand-title">BugFlow</div>
+          <div class="brand-subtitle">AI Intelligence v2.0</div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section-title">Core Management</div>
+        <a href="#dashboard" class="nav-item active" data-view="dashboard">
+          <span>📊</span>
+          <span>Dashboard</span>
+        </a>
+        <a href="#defects" class="nav-item" data-view="defects">
+          <span>🐞</span>
+          <span>Defects</span>
+          <span class="nav-badge" id="defects-nav-badge">12</span>
+        </a>
+        <a href="#kanban" class="nav-item" data-view="kanban">
+          <span>📋</span>
+          <span>Kanban Board</span>
+        </a>
+        <a href="#sprints" class="nav-item" data-view="sprints">
+          <span>⚡</span>
+          <span>Sprints & Health</span>
+        </a>
+        <a href="#teams" class="nav-item" data-view="teams">
+          <span>👥</span>
+          <span>Teams & Devs</span>
+        </a>
+
+        <div class="nav-section-title">Intelligent Assistance</div>
+        <a href="#intelligence" class="nav-item" data-view="intelligence">
+          <span>🧠</span>
+          <span>RCA & Similarity</span>
+        </a>
+        <a href="#analytics" class="nav-item" data-view="analytics">
+          <span>📈</span>
+          <span>Analytics</span>
+        </a>
+        <a href="#reports" class="nav-item" data-view="reports">
+          <span>📑</span>
+          <span>Reports</span>
+        </a>
+        <a href="#calendar" class="nav-item" data-view="calendar">
+          <span>📅</span>
+          <span>Calendar</span>
+        </a>
+        <a href="#activity" class="nav-item" data-view="activity">
+          <span>📜</span>
+          <span>Audit Stream</span>
+        </a>
+        <a href="#integrations" class="nav-item" data-view="integrations">
+          <span>🔗</span>
+          <span>Integrations</span>
+        </a>
+        <a href="#api-docs" class="nav-item" data-view="api-docs">
+          <span>📖</span>
+          <span>API & Swagger</span>
+        </a>
+
+        <div class="nav-section-title">Enterprise & QA</div>
+        <a href="#rag" class="nav-item" data-view="rag">
+          <span>📚</span>
+          <span>RAG Knowledge Base</span>
+          <span class="nav-badge" style="background: rgba(147, 51, 234, 0.25); color: #c084fc; font-weight: 700;">AI</span>
+        </a>
+        <a href="#administration" class="nav-item" data-view="administration">
+          <span>⚙️</span>
+          <span>Roles & Users</span>
+        </a>
+        <a href="#testing" class="nav-item" data-view="testing">
+          <span>🧪</span>
+          <span>Quality & CI/CD</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-profile-widget">
+          <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150" alt="Avatar" class="user-avatar" id="user-profile-avatar">
+          <div class="user-info">
+            <div class="user-name" id="user-profile-name">K. Sethu Madhav</div>
+            <div class="user-role-badge" id="user-profile-role">Developer</div>
+          </div>
+          <button id="btn-logout" title="Sign out" style="background: none; border: none; color: var(--text-muted); font-size: 1.15rem; cursor: pointer; padding: 4px;">
+            🚪
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Wrapper -->
+    <div class="main-wrapper">
+      
+      <!-- Top Navbar -->
+      <header class="top-navbar">
+        <div class="navbar-left">
+          <!-- Active Workspace Dropdown -->
+          <select id="project-select-header" class="project-selector-dropdown">
+            <option value="BugFlow Project - Professional Plan" selected>BugFlow Project - Professional Plan</option>
+            <option value="Acme Project">Acme Project</option>
+            <option value="Payment Gateway Platform">Payment Gateway Platform</option>
+          </select>
+
+          <!-- Global Search Input (Ctrl+K) -->
+          <div class="search-bar">
+            <span>🔍</span>
+            <input type="text" id="global-search-input" placeholder="Search defects, projects, teams... (Ctrl+K)">
+          </div>
+        </div>
+
+        <div class="navbar-right">
+          <!-- Live Clock -->
+          <div class="live-clock-badge" id="dash-live-clock">
+            Mon, Sep 29, 2026 11:24 AM
+          </div>
+
+          <!-- + Create Dropdown Button -->
+          <div style="position: relative;">
+            <button class="btn-create-dropdown" id="btn-create-trigger">
+              <span>+ Create</span>
+              <span style="font-size: 0.75rem;">▾</span>
+            </button>
+            <div class="create-menu-popup" id="create-menu-dropdown">
+              <div class="create-menu-item" id="action-create-defect">
+                <span>🐞</span> <span>Report Defect</span>
+              </div>
+              <div class="create-menu-item" id="action-create-sprint">
+                <span>⚡</span> <span>Create Sprint</span>
+              </div>
+              <div class="create-menu-item" id="action-create-team">
+                <span>👥</span> <span>Create Team</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Ask Gemini Button -->
+          <button class="btn-ask-gemini" id="btn-toggle-gemini-chat">
+            <span>✨</span>
+            <span>Ask Gemini</span>
+          </button>
+
+          <!-- Theme Switcher -->
+          <button class="btn-icon" id="btn-toggle-theme" title="Toggle Light/Dark Theme">
+            🌓
+          </button>
+
+          <!-- Notifications Bell -->
+          <button class="btn-icon" id="btn-notification-bell" title="Notifications">
+            🔔
+            <span class="notification-count" id="notification-badge">5</span>
+          </button>
+
+          <!-- Profile Chip -->
+          <div style="display: flex; align-items: center; gap: 8px; margin-left: 6px;">
+            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150" alt="" id="navbar-user-avatar" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1.5px solid var(--accent-primary);">
+            <div style="font-size: 0.82rem; font-weight: 600; color: #f8fafc;" id="navbar-user-name">Madhav</div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Notification Dropdown Drawer -->
+      <div id="notification-drawer">
+        <div class="notif-header">
+          <span style="font-weight: 700;">Notifications</span>
+          <button id="btn-mark-all-read" style="background: none; border: none; font-size: 0.75rem; color: var(--accent-primary); cursor: pointer; font-weight: 600;">Mark all read</button>
+        </div>
+        <div class="notif-list" id="notification-drawer-list">
+          <!-- Populated by app.js -->
+        </div>
+      </div>
+
+      <!-- Main Content Area -->
+      <main class="content-area">
+
+        <!-- ========================================== -->
+        <!-- VIEW 1: DASHBOARD (Matches Images 1 & 2) -->
+        <!-- ========================================== -->
+        <section id="view-dashboard" class="view-section active">
+          <!-- Greeting Banner -->
+          <div class="page-header" style="margin-bottom: 22px;">
+            <div>
+              <h1 class="page-title" id="dashboard-greeting-title" style="display: flex; align-items: center; gap: 8px;">
+                Good Morning, Sethu Madhav 👋
+              </h1>
+              <p class="page-desc">Here's what's happening with your projects today.</p>
+            </div>
+          </div>
+
+          <!-- 6 Metric KPI Stat Cards Grid (Matching Mockup 1 & 2) -->
+          <div class="stats-grid-6">
+            <!-- 1. Total Defects -->
+            <div class="kpi-stat-box">
+              <div class="kpi-header">
+                <div class="kpi-icon-pill" style="background: rgba(99, 102, 241, 0.2); color: #818cf8;">🐞</div>
+                <span class="kpi-trend-tag trend-up">↗ +12% from last week</span>
+              </div>
+              <div class="kpi-number" id="kpi-total-defects">124</div>
+              <div class="kpi-title">Total Defects</div>
+            </div>
+
+            <!-- 2. Open Defects -->
+            <div class="kpi-stat-box">
+              <div class="kpi-header">
+                <div class="kpi-icon-pill" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24;">⚡</div>
+                <span class="kpi-trend-tag trend-down">↘ -8% from last week</span>
+              </div>
+              <div class="kpi-number" id="kpi-open-defects">38</div>
+              <div class="kpi-title">Open Defects</div>
+            </div>
+
+            <!-- 3. In Progress -->
+            <div class="kpi-stat-box">
+              <div class="kpi-header">
+                <div class="kpi-icon-pill" style="background: rgba(168, 85, 247, 0.2); color: #c084fc;">⚙️</div>
+                <span class="kpi-trend-tag trend-up">↗ +5% from last week</span>
+              </div>
+              <div class="kpi-number" id="kpi-in-progress-defects">26</div>
+              <div class="kpi-title">In Progress</div>
+            </div>
+
+            <!-- 4. Critical Defects -->
+            <div class="kpi-stat-box">
+              <div class="kpi-header">
+                <div class="kpi-icon-pill" style="background: rgba(239, 68, 68, 0.2); color: #f87171;">🔥</div>
+                <span class="kpi-trend-tag trend-up" style="color: #f87171;">↗ +3% from last week</span>
+              </div>
+              <div class="kpi-number" id="kpi-critical-defects">12</div>
+              <div class="kpi-title">Critical Defects</div>
+            </div>
+
+            <!-- 5. Resolved Defects -->
+            <div class="kpi-stat-box">
+              <div class="kpi-header">
+                <div class="kpi-icon-pill" style="background: rgba(16, 185, 129, 0.2); color: #34d399;">✅</div>
+                <span class="kpi-trend-tag trend-up">↗ +10% from last week</span>
+              </div>
+              <div class="kpi-number" id="kpi-resolved-defects">96</div>
+              <div class="kpi-title">Resolved Defects</div>
+            </div>
+
+            <!-- 6. Sprint Health -->
+            <div class="kpi-stat-box">
+              <div class="kpi-header">
+                <div class="kpi-icon-pill" style="background: rgba(6, 182, 212, 0.2); color: #22d3ee;">⏱️</div>
+                <span class="kpi-trend-tag trend-up">25% faster</span>
+              </div>
+              <div class="kpi-number" id="kpi-sprint-health">78%</div>
+              <div class="kpi-title">Sprint Health (3.4d Avg)</div>
+            </div>
+          </div>
+
+          <!-- Quick Actions Bar (Matches Mockups) -->
+          <div class="quick-actions-bar">
+            <button class="btn-quick-action" onclick="defectsController.openReportModal()">
+              <span>🐞</span> <span>Create Defect</span>
+            </button>
+            <button class="btn-quick-action" onclick="document.getElementById('btn-toggle-gemini-chat').click()">
+              <span>✨</span> <span>Ask Gemini</span>
+            </button>
+            <button class="btn-quick-action" onclick="sprintsController.openCreateSprintModal()">
+              <span>⚡</span> <span>Create Sprint</span>
+            </button>
+            <button class="btn-quick-action" onclick="teamsController.openCreateTeamModal()">
+              <span>👥</span> <span>Create Team</span>
+            </button>
+            <button class="btn-quick-action" onclick="appController.navigateTo('reports')">
+              <span>📊</span> <span>Generate Report</span>
+            </button>
+            <button class="btn-quick-action" onclick="appController.navigateTo('api-docs')">
+              <span>📖</span> <span>View API Docs</span>
+            </button>
+          </div>
+
+          <!-- Charts Row (Defect Trends + Status Donut + Severity Bars) -->
+          <div class="charts-grid" style="grid-template-columns: 1.4fr 1fr 1fr; margin-bottom: 24px;">
+            <!-- Trends Line Chart -->
+            <div class="glass-card" style="padding: 20px;">
+              <div class="chart-card-header">
+                <div>
+                  <h3 class="chart-title">Defect Trends</h3>
+                  <div style="font-size: 0.76rem; color: var(--text-muted); margin-top: 2px;">Created vs Resolved vs Critical</div>
+                </div>
+                <select id="dashboard-trend-timeframe" class="form-select" style="font-size: 0.78rem; padding: 4px 10px;">
+                  <option value="30">Last 30 days</option>
+                  <option value="7">Last 7 days</option>
+                  <option value="90">Last 90 days</option>
+                </select>
+              </div>
+              <div class="chart-container" style="height: 240px;">
+                <canvas id="chart-defect-trends"></canvas>
+              </div>
+            </div>
+
+            <!-- Status Distribution Donut Chart -->
+            <div class="glass-card" style="padding: 20px;">
+              <div class="chart-card-header">
+                <div>
+                  <h3 class="chart-title">Defect Status</h3>
+                  <div style="font-size: 0.76rem; color: var(--text-muted); margin-top: 2px;">Distribution across stages</div>
+                </div>
+                <span class="badge" style="background: rgba(99,102,241,0.2);">124 Total</span>
+              </div>
+              <div class="chart-container" style="height: 240px; position: relative;">
+                <canvas id="chart-status-donut"></canvas>
+                <div style="position: absolute; top: 50%; left: 35%; transform: translate(-50%, -50%); text-align: center; pointer-events: none;">
+                  <div style="font-size: 1.5rem; font-weight: 800; color: #f8fafc;">124</div>
+                  <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;">Total</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Severity Distribution Bar Chart -->
+            <div class="glass-card" style="padding: 20px;">
+              <div class="chart-card-header">
+                <div>
+                  <h3 class="chart-title">Severity Distribution</h3>
+                  <div style="font-size: 0.76rem; color: var(--text-muted); margin-top: 2px;">Priority breakdown</div>
+                </div>
+                <span class="badge badge-critical">12 Blockers</span>
+              </div>
+              <div class="chart-container" style="height: 240px;">
+                <canvas id="chart-severity-bars"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Split Grid (Recent Defects Table + Right Widgets Stack) -->
+          <div class="dashboard-bottom-split">
+            <!-- Left: Recent Defects Table -->
+            <div class="glass-card" style="padding: 22px;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                <div>
+                  <h3 style="font-size: 1.15rem; font-weight: 700; color: #f8fafc;">Recent Defects</h3>
+                  <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">Latest reported & assigned issues</p>
+                </div>
+                <a href="#defects" style="font-size: 0.82rem; color: var(--accent-primary); font-weight: 600;">View All &rarr;</a>
+              </div>
+
+              <div class="table-responsive">
+                <table class="custom-table">
+                  <thead>
+                    <tr>
+                      <th style="width: 95px;">ID</th>
+                      <th>Title & Category</th>
+                      <th style="width: 100px;">Severity</th>
+                      <th style="width: 115px;">Status</th>
+                      <th style="width: 140px;">Assignee</th>
+                      <th style="width: 85px;">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="dash-recent-defects-body">
+                    <!-- Populated by dashboard.js with DEF-108, DEF-107, DEF-106, DEF-105, DEF-104 -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Right Stack: Sprint Health + Notifications + Embedded Ask Gemini -->
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+              
+              <!-- 1. Sprint Health Scorecard -->
+              <div class="glass-card" style="padding: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px;">
+                  <div>
+                    <h3 style="font-size: 1.05rem; font-weight: 700; color: #f8fafc;">Sprint Health</h3>
+                    <div style="font-size: 0.78rem; color: var(--text-muted);">Sprint 5 - Release v2.1</div>
+                  </div>
+                  <span class="dash-health-risk-badge badge-moderate" style="font-size: 0.74rem; font-weight: 700; padding: 4px 10px; border-radius: 9999px; background: rgba(245,158,11,0.2); color: #fbbf24;">
+                    Moderate Risk
+                  </span>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 18px; margin-bottom: 14px;">
+                  <!-- Circular SVG Health Gauge -->
+                  <div style="width: 80px; height: 80px; position: relative;">
+                    <svg width="80" height="80" viewBox="0 0 100 100">
+                      <circle cx="50" cy="50" r="45" stroke="rgba(255,255,255,0.08)" stroke-width="8" fill="none"></circle>
+                      <circle id="dash-sprint-ring-circle" cx="50" cy="50" r="45" stroke="#f59e0b" stroke-width="8" stroke-dasharray="282.7" stroke-dashoffset="62.2" stroke-linecap="round" fill="none" transform="rotate(-90 50 50)" style="transition: stroke-dashoffset 0.8s ease;"></circle>
+                    </svg>
+                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: 800; font-size: 1.15rem; color: #f8fafc;" id="dash-gauge-number">
+                      78%
+                    </div>
+                  </div>
+
+                  <div style="flex: 1; font-size: 0.8rem; color: var(--text-secondary); line-height: 1.45;">
+                    <div><strong>12 days remaining</strong> in current sprint cycle.</div>
+                    <div style="margin-top: 4px;">1 critical blocker &bull; 2 high-priority defects need verification.</div>
+                  </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; text-align: center; background: rgba(0,0,0,0.2); padding: 8px; border-radius: 8px; font-size: 0.76rem;">
+                  <div><span style="color: var(--text-muted); display: block;">Total</span><strong>48</strong></div>
+                  <div><span style="color: #34d399; display: block;">Done</span><strong>32</strong></div>
+                  <div><span style="color: #fbbf24; display: block;">Active</span><strong>12</strong></div>
+                  <div><span style="color: #f87171; display: block;">Blocked</span><strong>4</strong></div>
+                </div>
+              </div>
+
+              <!-- 2. Embedded Ask Gemini AI Assistant Widget (Matching Mockup 1 & 2) -->
+              <div class="glass-card" style="padding: 20px; border: 1px solid rgba(99, 102, 241, 0.3);">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 1.15rem;">✨</span>
+                    <strong style="font-size: 0.95rem; color: #f8fafc;">AI Assistant</strong>
+                  </div>
+                  <span style="font-size: 0.72rem; padding: 2px 8px; border-radius: 9999px; background: rgba(16,185,129,0.2); color: #34d399; font-weight: 600;">● Online</span>
+                </div>
+
+                <p style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 12px;">
+                  Ask Gemini anything about your defects, get root cause analysis, or find resolution code:
+                </p>
+
+                <!-- Quick Action Chips -->
+                <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px;">
+                  <button class="role-pill-btn dash-ai-chip" data-prompt="Analyze defect DEF-101">Analyze defect</button>
+                  <button class="role-pill-btn dash-ai-chip" data-prompt="Find similar defects to DEF-108">Find similar</button>
+                  <button class="role-pill-btn dash-ai-chip" data-prompt="Root cause of database timeout">Root cause</button>
+                  <button class="role-pill-btn dash-ai-chip" data-prompt="Suggest fix for login issue">Suggest fix</button>
+                </div>
+
+                <!-- Input form -->
+                <form id="dash-ai-assistant-form" style="display: flex; gap: 8px;">
+                  <input type="text" id="dash-ai-input" class="form-control" placeholder="Ask Gemini about defects..." style="font-size: 0.84rem; height: 38px;">
+                  <button type="submit" class="btn-primary" style="padding: 0 16px; font-size: 0.84rem; height: 38px;">Send</button>
+                </form>
+
+                <!-- Recent Questions List -->
+                <div style="margin-top: 14px; font-size: 0.76rem;">
+                  <div style="color: var(--text-muted); font-weight: 600; text-transform: uppercase; margin-bottom: 6px;">Recent Questions:</div>
+                  <div style="display: flex; flex-direction: column; gap: 5px;">
+                    <a href="javascript:void(0)" class="dash-recent-q" style="color: #cbd5e1; text-decoration: none;">&bull; Why is DEF-107 API failing?</a>
+                    <a href="javascript:void(0)" class="dash-recent-q" style="color: #cbd5e1; text-decoration: none;">&bull; Find similar defects to DEF-106</a>
+                    <a href="javascript:void(0)" class="dash-recent-q" style="color: #cbd5e1; text-decoration: none;">&bull; Suggest resolution for login issue</a>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- VIEW 2: DEFECTS REPOSITORY -->
+        <!-- ========================================== -->
+        <section id="view-defects" class="view-section">
+          <div class="page-header">
+            <div>
+              <h1 class="page-title">Defect Lifecycle Repository</h1>
+              <p class="page-desc">Search, filter, inspect, and track software defects across all 7 lifecycle stages.</p>
+            </div>
+            <button class="btn-primary" onclick="defectsController.openReportModal()">
+              <span>+ Report Defect</span>
+            </button>
+          </div>
+
+          <!-- Filter Toolbar -->
+          <div class="table-filter-bar glass-card">
+            <div class="filter-group">
+              <input type="text" id="defect-search-filter" class="form-input" placeholder="Filter by title, key, keyword..." style="width: 280px;">
+              
+              <select id="filter-status" class="form-select">
+                <option value="">All Statuses</option>
+                <option value="Reported">Reported</option>
+                <option value="Assigned">Assigned</option>
+                <option value="In Progress">In Progress</option>
+                <option value="In Review">In Review</option>
+                <option value="Resolved">Resolved</option>
+                <option value="Verified">Verified</option>
+                <option value="Closed">Closed</option>
+              </select>
+
+              <select id="filter-severity" class="form-select">
+                <option value="">All Severities</option>
+                <option value="Critical">Critical</option>
+                <option value="High">High</option>
+                <option value="Medium">Medium</option>
+                <option value="Low">Low</option>
+              </select>
+
+              <select id="filter-category" class="form-select">
+                <option value="">All Categories</option>
+                <option value="Payment">Payment</option>
+                <option value="Authentication">Authentication</option>
+                <option value="UI / UX">UI / UX</option>
+                <option value="Performance">Performance</option>
+                <option value="Database">Database</option>
+                <option value="API / Backend">API / Backend</option>
+              </select>
+            </div>
+
+            <div>
+              <span class="badge" id="defects-count-badge" style="background: rgba(99, 102, 241, 0.2); font-size: 0.85rem;">12 Defects</span>
+            </div>
+          </div>
+
+          <!-- Defects Data Table -->
+          <div class="table-responsive">
+            <table class="custom-table">
+              <thead>
+                <tr>
+                  <th style="width: 110px;">Defect Key</th>
+                  <th>Title & Module</th>
+                  <th style="width: 110px;">Severity</th>
+                  <th style="width: 130px;">Status</th>
+                  <th style="width: 160px;">Assignee</th>
+                  <th style="width: 120px;">Created</th>
+                  <th style="width: 140px;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="defects-table-body">
+                <!-- Injected via defects.js -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- VIEW 3: KANBAN BOARD (DRAG AND DROP) -->
+        <!-- ========================================== -->
+        <section id="view-kanban" class="view-section">
+          <div class="page-header">
+            <div>
+              <h1 class="page-title">Interactive Defect Lifecycle Board</h1>
+              <p class="page-desc">Drag and drop defect cards across states. Card transitions trigger RBAC verification and audit logging.</p>
+            </div>
+            <button class="btn-primary" onclick="defectsController.openReportModal()">
+              <span>+ Report Defect</span>
+            </button>
+          </div>
+
+          <div class="kanban-board-container" id="kanban-board-container">
+            <!-- 7 columns rendered via kanban.js -->
+          </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- VIEW 4: SPRINTS & SPRINT HEALTH -->
+        <!-- ========================================== -->
+        <section id="view-sprints" class="view-section">
+          <div class="page-header">
+            <div>
+              <h1 class="page-title">Sprint Management & Risk Analytics</h1>
+              <p class="page-desc">Evaluate real-time sprint health scores, burndown trajectories, and target velocity.</p>
+            </div>
+            <button class="btn-primary" id="btn-open-create-sprint">
+              <span>+ Create Sprint</span>
+            </button>
+          </div>
+
+          <div id="sprints-list-container">
+            <!-- Injected via sprints.js -->
+          </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- VIEW 5: TEAMS & DEVELOPERS -->
+        <!-- ========================================== -->
+        <section id="view-teams" class="view-section">
+          <div class="page-header">
+            <div>
+              <h1 class="page-title">Engineering Squads & Developer Teams</h1>
+              <p class="page-desc">Manage squads, assign engineers, and balance resolution workload capacity.</p>
+            </div>
+            <button class="btn-primary" id="btn-open-create-team">
+              <span>+ Create Team</span>
+            </button>
+          </div>
+
+          <div id="teams-container">
+            <!-- Injected via teams.js -->
+          </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- VIEW 6: AI INTELLIGENCE & RCA CENTER (Image 3) -->
+        <!-- ========================================== -->
+        <section id="view-intelligence" class="view-section">
+          <div class="page-header">
+            <div>
+              <h1 class="page-title">AI Intelligence & RCA Center</h1>
+              <p class="page-desc">Synthesize root cause hypotheses, semantic vector similarity, and actionable remediation fixes.</p>
+            </div>
+          </div>
+
+          <!-- Subtabs row (Matching Mockup 3) -->
+          <div class="intel-subtabs-row">
+            <button class="intel-subtab-btn active" data-intel-tab="rca">🛠️ Root Cause Analysis</button>
+            <button class="intel-subtab-btn" data-intel-tab="similarity">🔍 Similarity Detection</button>
+            <button class="intel-subtab-btn" data-intel-tab="kb">📚 Knowledge Base</button>
+            <button class="intel-subtab-btn" data-intel-tab="chat">✨ Ask Gemini</button>
+          </div>
+
+          <!-- Subtab 1: RCA Pane -->
+          <div class="intel-tab-pane" id="intel-pane-rca" style="display: block;">
+            <div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 24px; margin-bottom: 24px;">
+              <!-- Input Config -->
+              <div class="glass-card" style="padding: 24px;">
+                <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--accent-secondary); margin-bottom: 6px;">
+                  Target Defect & Telemetry Input
+                </h3>
+                <p style="font-size: 0.84rem; color: var(--text-secondary); margin-bottom: 16px;">
+                  Select a defect to analyze with Gemini and historical incident precedents.
+                </p>
+
+                <div class="form-group">
+                  <label class="form-label">Select Defect</label>
+                  <select id="rca-defect-select" class="form-control"></select>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Error Logs / Stacktrace / Reproduction Context</label>
+                  <textarea id="rca-logs-input" class="form-control" rows="4" placeholder="Paste runtime server logs, console exceptions, or stack traces..."></textarea>
+                </div>
+
+                <button class="btn-primary" id="btn-generate-rca" style="width: 100%; margin-top: 10px; background: linear-gradient(135deg, #6366f1, #06b6d4);">
+                  ✨ Analyze with AI & Synthesize RCA
+                </button>
+              </div>
+
+              <!-- Output Container -->
+              <div id="rca-output-container">
+                <div class="glass-card" style="padding: 32px; text-align: center; color: var(--text-muted);">
+                  <div style="font-size: 2rem; margin-bottom: 8px;">🧠</div>
+                  <strong>Select a defect and click "Analyze with AI"</strong>
+                  <p style="font-size: 0.85rem; margin-top: 4px;">The AI will synthesize a 92% confidence root cause report with code fixes.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Subtab 2: Similarity Pane -->
+          <div class="intel-tab-pane" id="intel-pane-similarity" style="display: none;">
+            <div class="glass-card" style="padding: 24px; margin-bottom: 24px;">
+              <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--accent-primary); margin-bottom: 6px;">
+                🔍 Vector Similarity & Duplicate Detector
+              </h3>
+              <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 18px;">
+                Uses TF-IDF and Cosine vector similarity to detect potential duplicate issues across the repository.
+              </p>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div class="form-group">
+                  <label class="form-label">Defect Title or Key Query</label>
+                  <input type="text" id="sim-search-title" class="form-control" placeholder="e.g. Payment page crashes on submit">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Detailed Symptoms / Description</label>
+                  <input type="text" id="sim-search-desc" class="form-control" placeholder="e.g. Unchecked null response in transaction verification">
+                </div>
+              </div>
+
+              <button class="btn-primary" id="btn-run-similarity-search" style="margin-top: 8px;">
+                Scan For Duplicate & Similar Defects
+              </button>
+
+              <div id="sim-search-results" style="margin-top: 20px;"></div>
+            </div>
+          </div>
+
+          <!-- Subtab 3: Knowledge Base Pane -->
+          <div class="intel-tab-pane" id="intel-pane-kb" style="display: none;">
+            <div class="glass-card" style="padding: 24px;">
+              <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 14px;">
+                📚 Historical Resolution Knowledge Base
+              </h3>
+              <div id="historical-kb-list"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- VIEW 7: ANALYTICS DASHBOARD (Image 3) -->
+        <!-- ========================================== -->
+        <section id="view-analytics" class="view-section">
+          <div class="page-header">
+            <div>
+              <h1 class="page-title">Defect Analytics & Velocity Metrics</h1>
+              <p class="page-desc">Comprehensive defect distribution, monthly trends, resolution velocity, and squad workload.</p>
+            </div>
+            <div style="display: flex; gap: 10px;">
+              <select id="analytics-timeframe-select" class="form-select" style="width: 140px;">
+                <option value="6m">Last 6 Months</option>
+                <option value="30d">Last 30 Days</option>
+                <option value="1y">Last Year</option>
+              </select>
+              <button class="btn-primary" id="btn-export-analytics">
+                <span>📥 Export Data</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 2x2 Analytics Charts Grid -->
+          <div class="analytics-grid-2x2">
+            <!-- 1. Defect Distribution -->
+            <div class="glass-card" style="padding: 20px;">
+              <div class="chart-card-header">
+                <h3 class="chart-title">Defect Distribution by Severity</h3>
+                <span class="badge" style="background: rgba(99,102,241,0.2);">Severity Breakdown</span>
+              </div>
+              <div class="chart-container" style="height: 250px;">
+                <canvas id="chart-analytics-distribution"></canvas>
+              </div>
+            </div>
+
+            <!-- 2. Monthly Trends -->
+            <div class="glass-card" style="padding: 20px;">
+              <div class="chart-card-header">
+                <h3 class="chart-title">Monthly Defect Trends (Created vs Resolved)</h3>
+                <span class="badge" style="background: rgba(16,185,129,0.2); color: #34d399;">Throughput</span>
+              </div>
+              <div class="chart-container" style="height: 250px;">
+                <canvas id="chart-analytics-monthly"></canvas>
+              </div>
+            </div>
+
+            <!-- 3. Resolution Time -->
+            <div class="glass-card" style="padding: 20px;">
+              <div class="chart-card-header">
+                <h3 class="chart-title">Mean Time to Resolution (Days)</h3>
+                <span class="badge" style="background: rgba(245,158,11,0.2); color: #fbbf24;">SLA Speed</span>
+              </div>
+              <div class="chart-container" style="height: 250px;">
+                <canvas id="chart-analytics-resolution"></canvas>
+              </div>
+            </div>
+
+            <!-- 4. Developer Workload -->
+            <div class="glass-card" style="padding: 20px;">
+              <div class="chart-card-header">
+                <h3 class="chart-title">Developer Workload & Active Load</h3>
+                <span class="badge" style="background: rgba(6,182,212,0.2); color: #22d3ee;">Capacity</span>
+              </div>
+              <div class="chart-container" style="height: 250px;">
+                <canvas id="chart-analytics-workload"></canvas>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- VIEW 8: REPORTS GENERATOR (Image 3) -->
+        <!-- ========================================== -->
+        <section id="view-reports" class="view-section">
+          <div class="page-header">
+            <div>
+              <h1 class="page-title">Reports & Export Center</h1>
+              <p class="page-desc">Generate scheduled and on-demand defect audits, sprint health summaries, and SLA compliance reports.</p>
+            </div>
+          </div>
+
+          <!-- Category Tabs -->
+          <div class="intel-subtabs-row" style="margin-bottom: 20px;">
+            <button class="intel-subtab-btn report-cat-tab active" data-cat="defect">Defect Reports</button>
+            <button class="intel-subtab-btn report-cat-tab" data-cat="sprint">Sprint Reports</button>
+            <button class="intel-subtab-btn report-cat-tab" data-cat="developer">Developer Reports</button>
+            <button class="intel-subtab-btn report-cat-tab" data-cat="ai">AI Insights</button>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+            <!-- Configuration Box -->
+            <div class="glass-card" style="padding: 24px;">
+              <h3 id="report-config-title" style="font-size: 1.15rem; font-weight: 700; margin-bottom: 16px;">
+                Generate Defect Summary Report
+              </h3>
+
+              <div class="form-group">
+                <label class="form-label">Report Type</label>
+                <select id="report-type-select" class="form-control">
+                  <option value="summary">Defect Summary (Status, Severity, SLA)</option>
+                  <option value="rca">Root Cause & Remediation Patterns</option>
+                  <option value="duplicates">Duplicate Detection Efficiency</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Date Range</label>
+                <select id="report-range-select" class="form-control">
+                  <option value="7">Last 7 Days</option>
+                  <option value="30" selected>Last 30 Days</option>
+                  <option value="90">Last Quarter (90 Days)</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Format</label>
+                <select id="report-format-select" class="form-control">
+                  <option value="pdf">PDF Document (.pdf)</option>
+                  <option value="csv">CSV Spreadsheet (.csv)</option>
+                  <option value="json">JSON Raw Data (.json)</option>
+                </select>
+              </div>
+
+              <button class="btn-primary" id="btn-generate-report" style="width: 100%; margin-top: 10px;">
+                Generate & Download Report
+              </button>
+            </div>
+
+            <!-- Recent Reports List -->
+            <div class="glass-card" style="padding: 24px;">
+              <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 16px;">Recent Reports</h3>
+              <div style="display: flex; flex-direction: column; gap: 12px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px;">
+                  <div>
+                    <strong style="font-size: 0.9rem;">Defect Summary - Sep 2026</strong>
+                    <div style="font-size: 0.74rem; color: var(--text-muted); margin-top: 2px;">Generated 2h ago &bull; PDF</div>
+                  </div>
+                  <button class="btn-secondary" style="font-size: 0.76rem; padding: 4px 10px;" onclick="window.showToast('Downloading Defect_Summary.pdf...', 'info')">Download</button>
+                </div>
+
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px;">
+                  <div>
+                    <strong style="font-size: 0.9rem;">Sprint 5 Performance & Risk</strong>
+                    <div style="font-size: 0.74rem; color: var(--text-muted); margin-top: 2px;">Generated 1d ago &bull; CSV</div>
+                  </div>
+                  <button class="btn-secondary" style="font-size: 0.76rem; padding: 4px 10px;" onclick="window.showToast('Downloading Sprint_5_Performance.csv...', 'info')">Download</button>
+                </div>
+
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px;">
+                  <div>
+                    <strong style="font-size: 0.9rem;">AI Root Cause Analysis Accuracy</strong>
+                    <div style="font-size: 0.74rem; color: var(--text-muted); margin-top: 2px;">Generated 3d ago &bull; PDF</div>
+                  </div>
+                  <button class="btn-secondary" style="font-size: 0.76rem; padding: 4px 10px;" onclick="window.showToast('Downloading AI_RCA_Report.pdf...', 'info')">Download</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- VIEW 9: CALENDAR -->
+        <!-- ========================================== -->
+        <section id="view-calendar" class="view-section">
+          <div class="page-header">
+            <div>
+              <h1 class="page-title">Release & Milestone Calendar</h1>
+              <p class="page-desc">Track sprint boundaries, defect deadlines, and deployment schedules.</p>
+            </div>
+            <div style="font-size: 1.1rem; font-weight: 700; color: var(--accent-primary);" id="calendar-month-title">
+              September 2026
+            </div>
+          </div>
+
+          <div class="glass-card">
+            <div id="calendar-grid"></div>
+          </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- VIEW 10: AUDIT STREAM / ACTIVITY HISTORY -->
+        <!-- ========================================== -->
+        <section id="view-activity" class="view-section">
+          <div class="page-header">
+            <div>
+              <h1 class="page-title">Audit Trail & System Activity Stream</h1>
+              <p class="page-desc">Full immutable log of all status transitions, developer assignments, and defect resolutions.</p>
+            </div>
+          </div>
+
+          <div id="activity-stream-container"></div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- VIEW 11: INTEGRATIONS (Image 3) -->
+        <!-- ========================================== -->
+        <section id="view-integrations" class="view-section">
+          <div class="page-header">
+            <div>
+              <h1 class="page-title">DevOps & Communication Integrations</h1>
+              <p class="page-desc">Sync GitHub pull requests, dispatch team Slack alerts, and trigger CI/CD webhooks.</p>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; margin-bottom: 24px;">
+            <!-- GitHub -->
+            <div class="glass-card" style="padding: 18px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="font-size: 1.4rem;">🐙</span>
+                  <strong style="font-size: 1rem;">GitHub</strong>
+                </div>
+                <span class="badge" style="background: rgba(16,185,129,0.2); color: #34d399;">Connected</span>
+              </div>
+              <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 12px;">Sync PRs, commits, & auto-close defects.</p>
+              <button class="btn-secondary" style="font-size: 0.78rem; width: 100%;" onclick="window.showToast('GitHub repository sync active!', 'info')">Configure</button>
+            </div>
+
+            <!-- Slack -->
+            <div class="glass-card" style="padding: 18px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="font-size: 1.4rem;">💬</span>
+                  <strong style="font-size: 1rem;">Slack</strong>
+                </div>
+                <span class="badge" style="background: rgba(16,185,129,0.2); color: #34d399;">Connected</span>
+              </div>
+              <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 12px;">Broadcast defect notifications to #alerts.</p>
+              <button class="btn-secondary" style="font-size: 0.78rem; width: 100%;" onclick="integrationsController.sendSlackAlert()">Send Test Alert</button>
+            </div>
+
+            <!-- Microsoft Teams -->
+            <div class="glass-card" style="padding: 18px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="font-size: 1.4rem;">👥</span>
+                  <strong style="font-size: 1rem;">MS Teams</strong>
+                </div>
+                <span class="badge" style="background: rgba(16,185,129,0.2); color: #34d399;">Connected</span>
+              </div>
+              <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 12px;">Channel notifications and adaptive cards.</p>
+              <button class="btn-secondary" style="font-size: 0.78rem; width: 100%;" onclick="window.showToast('MS Teams webhook verified!', 'info')">Configure</button>
+            </div>
+
+            <!-- Jira -->
+            <div class="glass-card" style="padding: 18px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="font-size: 1.4rem;">🔷</span>
+                  <strong style="font-size: 1rem;">Jira</strong>
+                </div>
+                <span class="badge" style="background: rgba(99,102,241,0.2);">Available</span>
+              </div>
+              <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 12px;">Import and 2-way sync Jira backlog issues.</p>
+              <button class="btn-secondary" style="font-size: 0.78rem; width: 100%;" onclick="window.showToast('Jira integration credentials required', 'warning')">Connect</button>
+            </div>
+          </div>
+
+          <!-- Integration Logs -->
+          <div class="glass-card" style="padding: 20px;">
+            <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 14px;">Webhook & Integration Logs</h3>
+            <div class="table-responsive">
+              <table class="custom-table">
+                <thead>
+                  <tr>
+                    <th>Provider</th>
+                    <th>Event Type</th>
+                    <th>Payload Details</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="integration-logs-body">
+                  <!-- Populated by integrations.js -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- VIEW 12: INTERACTIVE API & SWAGGER (Image 3) -->
+        <!-- ========================================== -->
+        <section id="view-api-docs" class="view-section">
+          <div class="page-header">
+            <div>
+              <h1 class="page-title">Interactive API & Swagger Explorer</h1>
+              <p class="page-desc">Test real REST endpoints directly from the browser with live response inspector.</p>
+            </div>
+            <a href="/docs" target="_blank" class="btn-secondary" style="font-size: 0.82rem;">
+              <span>Swagger UI Docs ↗</span>
+            </a>
+          </div>
+
+          <div class="api-docs-layout">
+            <!-- Left: Endpoints Nav -->
+            <div class="glass-card" style="padding: 16px; max-height: 680px; overflow-y: auto;">
+              <h3 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 12px; color: #f8fafc;">Endpoints</h3>
+              <div id="api-endpoints-nav"></div>
+            </div>
+
+            <!-- Right: Inspector & Test Runner -->
+            <div class="glass-card" style="padding: 24px;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <span id="api-doc-method" class="badge" style="font-weight: 800; font-size: 0.82rem;">POST</span>
+                  <span id="api-doc-path" style="font-family: var(--font-mono); font-size: 1.05rem; font-weight: 700; color: #f8fafc;">/api/v1/auth/login</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span id="api-doc-status-badge" class="badge" style="display: none;">200 OK</span>
+                  <span id="api-doc-latency" style="font-size: 0.76rem; color: var(--text-muted); font-family: var(--font-mono);"></span>
+                  <button class="btn-primary" id="btn-api-try-it-out" style="padding: 6px 14px; font-size: 0.82rem;">
+                    🚀 Try It Out
+                  </button>
+                </div>
+              </div>
+
+              <p id="api-doc-summary" style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 18px;"></p>
+
+              <!-- Parameters -->
+              <div style="margin-bottom: 18px;">
+                <div style="font-size: 0.78rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.05em; margin-bottom: 8px;">Parameters:</div>
+                <div id="api-doc-params-list" style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 8px;"></div>
+              </div>
+
+              <!-- JSON Body input -->
+              <div id="api-doc-body-wrap" style="margin-bottom: 18px; display: none;">
+                <div style="font-size: 0.78rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.05em; margin-bottom: 8px;">Request Body (JSON):</div>
+                <textarea id="api-doc-body-input" class="form-control" rows="5" style="font-family: var(--font-mono); font-size: 0.82rem; background: #0b0f19; color: #38bdf8;"></textarea>
+              </div>
+
+              <!-- Response Box -->
+              <div>
+                <div style="font-size: 0.78rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.05em; margin-bottom: 8px;">Response:</div>
+                <pre id="api-doc-response-preview" style="margin: 0; padding: 16px; background: #0b0f19; border-radius: 8px; font-family: var(--font-mono); font-size: 0.82rem; color: #34d399; max-height: 260px; overflow-y: auto; line-height: 1.45;"></pre>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================================== -->
+        <!-- VIEW: RAG KNOWLEDGE CENTER                     -->
+        <!-- ============================================== -->
+        <section id="view-rag" class="view-section">
+          <div class="page-header" style="margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+              <div>
+                <h1 class="page-title" style="display: flex; align-items: center; gap: 10px;">
+                  <span>📚</span>
+                  <span>RAG Knowledge Center & Semantic Retrieval</span>
+                </h1>
+                <p class="page-subtitle">
+                  End-to-end RAG architecture: Ingestion &rarr; Chunking &rarr; Cosine Vector Embeddings &rarr; Semantic Search &rarr; Gemini Context Synthesis
+                </p>
+              </div>
+              <div style="display: flex; gap: 8px;">
+                <button type="button" class="btn-primary" onclick="ragController.switchTab('upload')" style="background: linear-gradient(135deg, #8b5cf6, #d946ef);">
+                  <span>📤 Ingest Knowledge</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- RAG Pipeline Architecture Flow -->
+          <div class="glass-card" style="padding: 16px 20px; margin-bottom: 22px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(139, 92, 246, 0.25);">
+            <div style="font-size: 0.76rem; text-transform: uppercase; color: #a78bfa; font-weight: 700; letter-spacing: 0.08em; margin-bottom: 10px;">
+              ⚡ Autonomous Vector Knowledge Pipeline Flow:
+            </div>
+            <div class="rag-pipeline-stepper" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; align-items: center;">
+              <div class="rag-pipe-node" style="padding: 8px 12px; background: rgba(30, 41, 59, 0.8); border-radius: 8px; border: 1px solid rgba(255,255,255,0.08); text-align: center;">
+                <div style="font-size: 1rem;">📄</div>
+                <div style="font-size: 0.75rem; font-weight: 700; color: #f8fafc; margin-top: 2px;">Ingestion</div>
+                <div style="font-size: 0.65rem; color: var(--text-muted);">PDF / MD / TXT</div>
+              </div>
+              <div style="text-align: center; color: var(--text-muted); font-size: 0.9rem;">&rarr;</div>
+              <div class="rag-pipe-node" style="padding: 8px 12px; background: rgba(30, 41, 59, 0.8); border-radius: 8px; border: 1px solid rgba(255,255,255,0.08); text-align: center;">
+                <div style="font-size: 1rem;">✂️</div>
+                <div style="font-size: 0.75rem; font-weight: 700; color: #f8fafc; margin-top: 2px;">Chunking</div>
+                <div style="font-size: 0.65rem; color: var(--text-muted);">Sliding Overlap</div>
+              </div>
+              <div style="text-align: center; color: var(--text-muted); font-size: 0.9rem;">&rarr;</div>
+              <div class="rag-pipe-node" style="padding: 8px 12px; background: rgba(30, 41, 59, 0.8); border-radius: 8px; border: 1px solid rgba(255,255,255,0.08); text-align: center;">
+                <div style="font-size: 1rem;">🧬</div>
+                <div style="font-size: 0.75rem; font-weight: 700; color: #f8fafc; margin-top: 2px;">Embeddings</div>
+                <div style="font-size: 0.65rem; color: var(--text-muted);">Dense Vectors</div>
+              </div>
+              <div style="text-align: center; color: var(--text-muted); font-size: 0.9rem;">&rarr;</div>
+              <div class="rag-pipe-node" style="padding: 8px 12px; background: rgba(30, 41, 59, 0.8); border-radius: 8px; border: 1px solid rgba(255,255,255,0.08); text-align: center;">
+                <div style="font-size: 1rem;">🎯</div>
+                <div style="font-size: 0.75rem; font-weight: 700; color: #f8fafc; margin-top: 2px;">Retrieval</div>
+                <div style="font-size: 0.65rem; color: var(--text-muted);">Cosine Match</div>
+              </div>
+              <div style="text-align: center; color: var(--text-muted); font-size: 0.9rem;">&rarr;</div>
+              <div class="rag-pipe-node" style="padding: 8px 12px; background: rgba(139, 92, 246, 0.15); border-radius: 8px; border: 1px solid #8b5cf6; text-align: center;">
+                <div style="font-size: 1rem;">✨</div>
+                <div style="font-size: 0.75rem; font-weight: 700; color: #c084fc; margin-top: 2px;">Gemini LLM</div>
+                <div style="font-size: 0.65rem; color: #e9d5ff;">Context Answer</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- RAG Quick Metric Stats Cards -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 22px;">
+            <div class="glass-card stat-card" style="padding: 16px;">
+              <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Indexed Documents</div>
+              <div id="rag-stat-docs" style="font-size: 1.8rem; font-weight: 800; color: #38bdf8; margin-top: 6px;">5</div>
+              <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 4px;">Architecture & Runbooks</div>
+            </div>
+            <div class="glass-card stat-card" style="padding: 16px;">
+              <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Vector Chunks</div>
+              <div id="rag-stat-chunks" style="font-size: 1.8rem; font-weight: 800; color: #a855f7; margin-top: 6px;">18</div>
+              <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 4px;">Semantic Segments</div>
+            </div>
+            <div class="glass-card stat-card" style="padding: 16px;">
+              <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Vector Dimension</div>
+              <div id="rag-stat-dims" style="font-size: 1.8rem; font-weight: 800; color: #34d399; margin-top: 6px;">128-d</div>
+              <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 4px;">Normalized Embeddings</div>
+            </div>
+            <div class="glass-card stat-card" style="padding: 16px;">
+              <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Queries Served</div>
+              <div id="rag-stat-queries" style="font-size: 1.8rem; font-weight: 800; color: #fbbf24; margin-top: 6px;">24</div>
+              <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 4px;">Context Retrievals</div>
+            </div>
+          </div>
+
+          <!-- RAG Subtabs -->
+          <div style="display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
+            <button class="rag-subtab-btn active" data-rag-tab="search" style="background: none; border: none; padding: 8px 16px; font-weight: 600; font-size: 0.88rem; cursor: pointer; color: #f8fafc; border-bottom: 2px solid #8b5cf6;">
+              🔍 Semantic Vector Search
+            </button>
+            <button class="rag-subtab-btn" data-rag-tab="upload" style="background: none; border: none; padding: 8px 16px; font-weight: 600; font-size: 0.88rem; cursor: pointer; color: var(--text-muted);">
+              📤 Ingest & Chunk Document
+            </button>
+            <button class="rag-subtab-btn" data-rag-tab="directory" style="background: none; border: none; padding: 8px 16px; font-weight: 600; font-size: 0.88rem; cursor: pointer; color: var(--text-muted);">
+              📂 Knowledge Directory
+            </button>
+            <button class="rag-subtab-btn" data-rag-tab="history" style="background: none; border: none; padding: 8px 16px; font-weight: 600; font-size: 0.88rem; cursor: pointer; color: var(--text-muted);">
+              📜 Historical Precedents
+            </button>
+          </div>
+
+          <!-- PANE 1: SEMANTIC VECTOR SEARCH -->
+          <div class="rag-tab-pane" id="rag-pane-search">
+            <div class="glass-card" style="padding: 22px; margin-bottom: 20px;">
+              <form id="rag-search-form">
+                <div style="display: flex; gap: 12px; margin-bottom: 14px;">
+                  <div style="flex: 1;" class="input-with-icon">
+                    <span class="field-icon">🔍</span>
+                    <input type="text" id="rag-search-input" class="form-control" placeholder="Ask a question or enter keywords (e.g., 'How to fix idempotency key conflicts in Stripe?')" value="Payment gateway timeout handling" required>
+                  </div>
+                  <select id="rag-category-filter" class="form-select" style="width: 170px;">
+                    <option value="">All Categories</option>
+                    <option value="Payment">Payment</option>
+                    <option value="Authentication">Authentication</option>
+                    <option value="Database">Database</option>
+                    <option value="API / Backend">API / Backend</option>
+                    <option value="UI / UX">UI / UX</option>
+                  </select>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                  <!-- Quick Prompt Chips -->
+                  <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                    <span style="font-size: 0.75rem; color: var(--text-muted); align-self: center;">Quick Prompts:</span>
+                    <button type="button" class="rag-prompt-chip role-pill-btn" data-prompt="Payment gateway timeout handling">Payment Gateway</button>
+                    <button type="button" class="rag-prompt-chip role-pill-btn" data-prompt="JWT expired token refresh loop">JWT Expiry</button>
+                    <button type="button" class="rag-prompt-chip role-pill-btn" data-prompt="Database connection pool exhaustion pool_pre_ping">DB Connection Pool</button>
+                    <button type="button" class="rag-prompt-chip role-pill-btn" data-prompt="WebSocket reconnect backoff strategy">WebSocket Reconnect</button>
+                  </div>
+
+                  <div style="display: flex; gap: 8px;">
+                    <button type="submit" class="btn-secondary" style="font-size: 0.85rem;">
+                      <span>🔍 Vector Search</span>
+                    </button>
+                    <button type="button" id="btn-rag-synthesize" class="btn-primary" style="font-size: 0.85rem; background: linear-gradient(135deg, #6366f1, #a855f7);">
+                      <span>✨ Ask Gemini (Synthesize)</span>
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+
+            <!-- Gemini Synthesized Answer Box -->
+            <div id="rag-synthesized-answer-wrap" class="glass-card" style="display: none; padding: 22px; margin-bottom: 22px; border-left: 4px solid #a855f7; background: rgba(30, 27, 75, 0.4);">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="font-size: 1.2rem;">✨</span>
+                  <strong style="color: #c084fc; font-size: 1rem;">Gemini Context-Aware Synthesis</strong>
+                  <span class="badge" style="background: rgba(168, 85, 247, 0.2); color: #e9d5ff; font-size: 0.72rem;">RAG Grounded</span>
+                </div>
+              </div>
+              <div id="rag-synthesized-answer-text" style="font-size: 0.9rem; line-height: 1.6; color: #f8fafc; white-space: pre-line;"></div>
+              
+              <div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.08);">
+                <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin-bottom: 6px;">Grounding Citations & Sources:</div>
+                <div id="rag-synthesized-citations" style="display: flex; gap: 6px; flex-wrap: wrap;"></div>
+              </div>
+            </div>
+
+            <!-- Search Results Stream -->
+            <div style="margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+              <h3 style="font-size: 0.95rem; font-weight: 700; color: #f8fafc;">Retrieved Vector Knowledge Chunks:</h3>
+            </div>
+            <div id="rag-search-results">
+              <div class="glass-card" style="padding: 30px; text-align: center; color: var(--text-muted);">
+                Click <strong>"Vector Search"</strong> or choose a quick prompt to retrieve grounded context.
+              </div>
+            </div>
+          </div>
+
+          <!-- PANE 2: INGEST & CHUNK DOCUMENT -->
+          <div class="rag-tab-pane" id="rag-pane-upload" style="display: none;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+              <!-- Left: File Upload Dropzone -->
+              <div class="glass-card" style="padding: 22px;">
+                <h3 style="font-size: 1rem; font-weight: 700; color: #f8fafc; margin-bottom: 12px;">📁 File Upload & Document Extraction</h3>
+                
+                <div id="rag-file-dropzone" class="file-dropzone" style="border: 2px dashed rgba(139, 92, 246, 0.4); border-radius: 12px; padding: 40px 20px; text-align: center; cursor: pointer; transition: all 0.2s ease; background: rgba(15, 23, 42, 0.4);">
+                  <div style="font-size: 2.2rem; margin-bottom: 10px;">📤</div>
+                  <div style="font-weight: 700; font-size: 0.95rem; color: #f8fafc;">Drag & Drop Architecture / Runbook Document</div>
+                  <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">Supports Markdown (.md), Text (.txt), JSON, or Log files</div>
+                  <button type="button" class="btn-secondary" style="margin-top: 14px; font-size: 0.8rem; pointer-events: none;">
+                    Browse File
+                  </button>
+                  <input type="file" id="rag-file-upload-input" accept=".txt,.md,.json,.csv,.log,.py,.js" style="display: none;">
+                </div>
+
+                <div style="margin-top: 16px; font-size: 0.8rem; color: var(--text-secondary); line-height: 1.45;">
+                  💡 <strong>How it works:</strong> Files are automatically read and extracted into plain text. Upon ingestion, our sliding-window chunker splits the text into 120-word semantic vectors with 25-word overlap for high retrieval accuracy.
+                </div>
+              </div>
+
+              <!-- Right: Metadata & Raw Ingestion Form -->
+              <div class="glass-card" style="padding: 22px;">
+                <h3 style="font-size: 1rem; font-weight: 700; color: #f8fafc; margin-bottom: 12px;">📝 Document Metadata & Vector Parameters</h3>
+                
+                <form id="rag-ingest-form">
+                  <div class="form-group" style="margin-bottom: 12px;">
+                    <label class="form-label">Document Title</label>
+                    <input type="text" id="rag-ingest-title" class="form-control" placeholder="e.g. Distributed Lock Architecture & Redis Failover" required>
+                  </div>
+
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+                    <div class="form-group">
+                      <label class="form-label">Category</label>
+                      <select id="rag-ingest-category" class="form-control">
+                        <option value="Architecture">Architecture</option>
+                        <option value="Runbook">Runbook</option>
+                        <option value="Payment">Payment</option>
+                        <option value="Authentication">Authentication</option>
+                        <option value="Database">Database</option>
+                        <option value="API / Backend">API / Backend</option>
+                      </select>
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">File Type</label>
+                      <input type="text" id="rag-ingest-type" class="form-control" value="markdown" required>
+                    </div>
+                  </div>
+
+                  <div class="form-group" style="margin-bottom: 12px;">
+                    <label class="form-label">Document Content (Extracted Text)</label>
+                    <textarea id="rag-ingest-content" class="form-control" rows="6" placeholder="Paste architectural specifications, root cause resolutions, or code guidelines..." required></textarea>
+                  </div>
+
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px;">
+                    <div class="form-group">
+                      <label class="form-label">Chunk Size (Words)</label>
+                      <input type="number" id="rag-ingest-chunk-size" class="form-control" value="120" min="40" max="400">
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Chunk Overlap (Words)</label>
+                      <input type="number" id="rag-ingest-overlap" class="form-control" value="25" min="5" max="100">
+                    </div>
+                  </div>
+
+                  <button type="submit" class="btn-primary" style="width: 100%; background: linear-gradient(135deg, #8b5cf6, #3b82f6);">
+                    <span>⚡ Vectorize & Ingest Document</span>
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+
+          <!-- PANE 3: KNOWLEDGE DIRECTORY -->
+          <div class="rag-tab-pane" id="rag-pane-directory" style="display: none;">
+            <div class="glass-card" style="padding: 20px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <div style="display: flex; gap: 10px; flex: 1; max-width: 500px;">
+                  <input type="text" id="rag-doc-filter-input" class="form-control" placeholder="Filter documents by name...">
+                  <select id="rag-doc-cat-filter" class="form-select" style="width: 160px;">
+                    <option value="">All Categories</option>
+                    <option value="Architecture">Architecture</option>
+                    <option value="Runbook">Runbook</option>
+                    <option value="Payment">Payment</option>
+                    <option value="Authentication">Authentication</option>
+                    <option value="Database">Database</option>
+                  </select>
+                </div>
+                <button type="button" class="btn-secondary" onclick="ragController.loadKnowledgeDirectory()">
+                  🔄 Refresh
+                </button>
+              </div>
+
+              <div class="table-responsive">
+                <table class="custom-table">
+                  <thead>
+                    <tr>
+                      <th style="width: 70px;">ID</th>
+                      <th>Document Title</th>
+                      <th>Category</th>
+                      <th>Format</th>
+                      <th>Chunks</th>
+                      <th>Size</th>
+                      <th>Indexed At</th>
+                      <th style="width: 120px;">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="rag-directory-table-body">
+                    <tr>
+                      <td colspan="8" style="text-align: center; padding: 24px; color: var(--text-muted);">
+                        Loading documents...
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- PANE 4: HISTORICAL PRECEDENTS -->
+          <div class="rag-tab-pane" id="rag-pane-history" style="display: none;">
+            <div class="glass-card" style="padding: 20px;">
+              <div style="margin-bottom: 16px;">
+                <h3 style="font-size: 1.05rem; font-weight: 700; color: #f8fafc;">Historical Defect Resolutions Precedents</h3>
+                <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 4px;">
+                  High-confidence resolutions from resolved past defects automatically utilized by the similarity and RAG engine.
+                </p>
+              </div>
+              <div id="rag-historical-resolutions-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 14px;"></div>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ============================================== -->
+        <!-- VIEW: ADMINISTRATION & ROLES                   -->
+        <!-- ============================================== -->
+        <section id="view-administration" class="view-section">
+          <div class="page-header" style="margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+              <div>
+                <h1 class="page-title" style="display: flex; align-items: center; gap: 10px;">
+                  <span>⚙️</span>
+                  <span>Roles & User Administration</span>
+                </h1>
+                <p class="page-subtitle">
+                  Configure role assignments (Admin, PM, Developer, QA / Tester, Reporter), inspect permissions matrix, and manage accounts.
+                </p>
+              </div>
+              <div>
+                <button type="button" class="btn-primary" onclick="adminController.switchTab('create')">
+                  <span>+ Create User</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Admin Subtabs -->
+          <div style="display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
+            <button class="admin-subtab-btn active" data-admin-tab="users" style="background: none; border: none; padding: 8px 16px; font-weight: 600; font-size: 0.88rem; cursor: pointer; color: #f8fafc; border-bottom: 2px solid #6366f1;">
+              👥 Platform Users (<span id="admin-user-count-badge">...</span>)
+            </button>
+            <button class="admin-subtab-btn" data-admin-tab="matrix" style="background: none; border: none; padding: 8px 16px; font-weight: 600; font-size: 0.88rem; cursor: pointer; color: var(--text-muted);">
+              🛡️ RBAC Permissions Matrix
+            </button>
+            <button class="admin-subtab-btn" data-admin-tab="create" style="background: none; border: none; padding: 8px 16px; font-weight: 600; font-size: 0.88rem; cursor: pointer; color: var(--text-muted);">
+              ➕ Add New User
+            </button>
+          </div>
+
+          <!-- PANE 1: USERS DIRECTORY -->
+          <div class="admin-tab-pane" id="admin-pane-users">
+            <div class="glass-card" style="padding: 20px;">
+              <div class="table-responsive">
+                <table class="custom-table">
+                  <thead>
+                    <tr>
+                      <th style="width: 70px;">ID</th>
+                      <th>User</th>
+                      <th>Username</th>
+                      <th>Email</th>
+                      <th>Role</th>
+                      <th>Status</th>
+                      <th style="width: 140px;">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="admin-users-table-body">
+                    <tr>
+                      <td colspan="7" style="text-align: center; padding: 24px; color: var(--text-muted);">
+                        Loading platform users...
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- PANE 2: PERMISSIONS MATRIX -->
+          <div class="admin-tab-pane" id="admin-pane-matrix" style="display: none;">
+            <div class="glass-card" style="padding: 20px;">
+              <div style="margin-bottom: 16px;">
+                <h3 style="font-size: 1.05rem; font-weight: 700; color: #f8fafc;">Role-Based Access Control (RBAC) Specification</h3>
+                <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 4px;">
+                  Granular permission gates enforced by backend JWT decorators and API middleware.
+                </p>
+              </div>
+              <div id="admin-matrix-container"></div>
+            </div>
+          </div>
+
+          <!-- PANE 3: CREATE USER -->
+          <div class="admin-tab-pane" id="admin-pane-create" style="display: none;">
+            <div class="glass-card" style="padding: 24px; max-width: 600px;">
+              <h3 style="font-size: 1.1rem; font-weight: 700; color: #f8fafc; margin-bottom: 16px;">Create Platform Account</h3>
+              <form id="admin-create-user-form">
+                <div class="form-group" style="margin-bottom: 14px;">
+                  <label class="form-label">Full Name</label>
+                  <input type="text" id="admin-new-fullname" class="form-control" placeholder="e.g. Vikram Rao" required>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
+                  <div class="form-group">
+                    <label class="form-label">Username</label>
+                    <input type="text" id="admin-new-username" class="form-control" placeholder="vikram_qa" required>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Role Assignment</label>
+                    <select id="admin-new-role" class="form-control">
+                      <option value="Developer">Developer</option>
+                      <option value="QA / Tester">QA / Tester</option>
+                      <option value="Project Manager">Project Manager</option>
+                      <option value="Reporter">Reporter</option>
+                      <option value="Admin">Admin</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 14px;">
+                  <label class="form-label">Work Email</label>
+                  <input type="email" id="admin-new-email" class="form-control" placeholder="vikram@bugflow.io" required>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 20px;">
+                  <label class="form-label">Initial Password</label>
+                  <input type="password" id="admin-new-password" class="form-control" placeholder="Minimum 6 characters" required>
+                </div>
+
+                <button type="submit" class="btn-primary" style="width: 100%;">
+                  <span>Create User Account</span>
+                </button>
+              </form>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ============================================== -->
+        <!-- VIEW: QUALITY & TESTING & CI/CD               -->
+        <!-- ============================================== -->
+        <section id="view-testing" class="view-section">
+          <div class="page-header" style="margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+              <div>
+                <h1 class="page-title" style="display: flex; align-items: center; gap: 10px;">
+                  <span>🧪</span>
+                  <span>Quality Assurance & CI/CD Pipeline</span>
+                </h1>
+                <p class="page-subtitle">
+                  Real-time automated regression suite runner, unit tests, and GitHub Actions CI/CD pipeline verification.
+                </p>
+              </div>
+              <div>
+                <button type="button" id="btn-run-all-tests" class="btn-primary" style="background: linear-gradient(135deg, #10b981, #06b6d4);">
+                  <span>▶ Run All Test Suites</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quality Stats Row -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 22px;">
+            <div class="glass-card stat-card" style="padding: 16px;">
+              <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Total Automated Tests</div>
+              <div id="testing-stat-total" style="font-size: 1.8rem; font-weight: 800; color: #f8fafc; margin-top: 6px;">19</div>
+              <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 4px;">Pytest & Playwright Suites</div>
+            </div>
+            <div class="glass-card stat-card" style="padding: 16px;">
+              <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Tests Passed</div>
+              <div id="testing-stat-passed" style="font-size: 1.8rem; font-weight: 800; color: #10b981; margin-top: 6px;">19</div>
+              <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 4px;">0 Failures Detected</div>
+            </div>
+            <div class="glass-card stat-card" style="padding: 16px;">
+              <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Pass Rate</div>
+              <div id="testing-stat-rate" style="font-size: 1.8rem; font-weight: 800; color: #34d399; margin-top: 6px;">100%</div>
+              <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 4px;">Quality Gate: PASSED</div>
+            </div>
+            <div class="glass-card stat-card" style="padding: 16px;">
+              <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Execution Time</div>
+              <div id="testing-stat-duration" style="font-size: 1.8rem; font-weight: 800; color: #38bdf8; margin-top: 6px;">1.42s</div>
+              <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 4px;">Async Concurrent Execution</div>
+            </div>
+          </div>
+
+          <!-- Testing Subtabs -->
+          <div style="display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
+            <button class="testing-subtab-btn active" data-testing-tab="tests" style="background: none; border: none; padding: 8px 16px; font-weight: 600; font-size: 0.88rem; cursor: pointer; color: #f8fafc; border-bottom: 2px solid #10b981;">
+              ⚡ Automated Test Suites & Runner
+            </button>
+            <button class="testing-subtab-btn" data-testing-tab="cicd" style="background: none; border: none; padding: 8px 16px; font-weight: 600; font-size: 0.88rem; cursor: pointer; color: var(--text-muted);">
+              🚀 GitHub Actions CI/CD Telemetry
+            </button>
+          </div>
+
+          <!-- PANE 1: TEST RUNNER -->
+          <div class="testing-tab-pane" id="testing-pane-tests">
+            <!-- Test Runner Control Banner -->
+            <div class="glass-card" style="padding: 18px 22px; margin-bottom: 20px; background: rgba(15, 23, 42, 0.7);">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <div style="font-weight: 700; font-size: 0.92rem; color: #f8fafc;">
+                  Automated Test Execution Progress
+                </div>
+                <div id="testing-run-status-text" style="font-size: 0.82rem; font-weight: 600; color: #10b981;">
+                  Ready to execute
+                </div>
+              </div>
+              <div class="progress-bar-bg" style="height: 8px; background: rgba(255,255,255,0.06); border-radius: 4px; overflow: hidden;">
+                <div id="testing-progress-bar" class="progress-bar-fill" style="width: 100%; height: 100%; background: linear-gradient(90deg, #10b981, #06b6d4); transition: width 0.3s ease;"></div>
+              </div>
+            </div>
+
+            <!-- Suites Breakdown -->
+            <div style="display: grid; grid-template-columns: 320px 1fr; gap: 20px;">
+              <div>
+                <h3 style="font-size: 0.95rem; font-weight: 700; color: #f8fafc; margin-bottom: 12px;">Active Test Suites</h3>
+                <div id="testing-suites-list" style="display: flex; flex-direction: column; gap: 10px;"></div>
+              </div>
+
+              <div>
+                <h3 style="font-size: 0.95rem; font-weight: 700; color: #f8fafc; margin-bottom: 12px;">Executed Test Cases Stream</h3>
+                <div id="testing-results-container"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- PANE 2: CI/CD TELEMETRY -->
+          <div class="testing-tab-pane" id="testing-pane-cicd" style="display: none;">
+            <div class="glass-card" style="padding: 20px;">
+              <div style="margin-bottom: 16px;">
+                <h3 style="font-size: 1.05rem; font-weight: 700; color: #f8fafc;">GitHub Actions Deployment & Verification Pipelines</h3>
+                <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 4px;">
+                  Continuous integration status across pull requests, merge checks, and containerized deployment gates.
+                </p>
+              </div>
+              <div id="testing-cicd-container"></div>
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- ASK GEMINI FLOATING CHAT DRAWER -->
+  <!-- ========================================== -->
+  <div id="gemini-chat-drawer">
+    <div class="chat-header">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 1.2rem;">✨</span>
+        <strong style="font-size: 0.95rem;">Ask Gemini Assistant</strong>
+      </div>
+      <button id="btn-close-gemini-chat" style="background: none; border: none; color: var(--text-muted); font-size: 1.3rem; cursor: pointer;">&times;</button>
+    </div>
+
+    <!-- Quick Prompt Chips -->
+    <div style="padding: 10px 14px; display: flex; gap: 6px; overflow-x: auto; border-bottom: 1px solid var(--border-color); background: rgba(0,0,0,0.15);">
+      <button class="role-pill-btn quick-prompt-chip" style="white-space: nowrap;">Suggest RCA for DEF-101</button>
+      <button class="role-pill-btn quick-prompt-chip" style="white-space: nowrap;">Check Sprint 5 Risk</button>
+      <button class="role-pill-btn quick-prompt-chip" style="white-space: nowrap;">How to fix null error?</button>
+    </div>
+
+    <div class="chat-messages" id="gemini-chat-messages">
+      <div class="chat-bubble bot">
+        Hello! I am your <strong>Gemini Defect Intelligence Assistant</strong>. How can I help you analyze, troubleshoot, or resolve defects today?
+      </div>
+    </div>
+
+    <form class="chat-input-bar" id="gemini-chat-form">
+      <input type="text" id="gemini-chat-input" placeholder="Ask about root cause, test cases, code fix..." autocomplete="off">
+      <button type="submit" class="btn-primary" style="padding: 6px 14px; font-size: 0.82rem;">Send</button>
+    </form>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODALS -->
+  <!-- ========================================== -->
+
+  <!-- 1. Report Defect Dialog (with AI Assistant) -->
+  <dialog id="report-defect-dialog">
+    <div class="modal-content" style="width: 760px; max-width: 95vw;">
+      <div class="modal-header">
+        <h2 class="modal-title">🚀 Report Software Defect</h2>
+        <button class="btn-icon" onclick="document.getElementById('report-defect-dialog').close()">&times;</button>
+      </div>
+
+      <form id="create-defect-form">
+        <div class="modal-body">
+          <!-- AI Assistance Box -->
+          <div class="ai-assist-box">
+            <div class="ai-assist-header">
+              <span style="font-size: 0.85rem; font-weight: 700; color: var(--accent-primary);">🤖 AI Defect Quality & Reporting Assistant</span>
+              <div class="completeness-meter-wrap">
+                <span style="font-size: 0.75rem; color: var(--text-muted);">Quality:</span>
+                <span id="ai-completeness-score" style="font-weight: 700; font-size: 0.85rem; color: var(--accent-success);">25%</span>
+                <div class="progress-bar-bg" style="width: 80px; height: 6px;">
+                  <div id="ai-completeness-bar" class="progress-bar-fill" style="width: 25%;"></div>
+                </div>
+              </div>
+            </div>
+
+            <div id="ai-missing-info-list" style="margin-top: 6px;"></div>
+
+            <div style="margin-top: 10px; display: flex; justify-content: flex-end;">
+              <button type="button" class="btn-secondary" id="btn-ai-format-report" style="font-size: 0.8rem; padding: 6px 14px; background: rgba(99,102,241,0.25); color: #c7d2fe; border-color: rgba(99,102,241,0.5);">
+                ✨ AI Analyze & Format Defect
+              </button>
+            </div>
+          </div>
+
+          <div id="duplicate-warning-box" class="duplicate-warning-box" style="display: none; margin-bottom: 14px;"></div>
+
+          <div class="form-group">
+            <label class="form-label">Project</label>
+            <select id="defect-project-select" class="form-control" required></select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Raw Symptom / Initial Description</label>
+            <textarea id="defect-raw-desc-input" class="form-control" rows="2" placeholder="e.g. Login broken on mobile Safari after entering password"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Defect Title</label>
+            <input type="text" id="defect-title-input" class="form-control" placeholder="Defect Summary" required>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+            <div class="form-group">
+              <label class="form-label">Category</label>
+              <select id="defect-category-select" class="form-control">
+                <option value="Payment">Payment</option>
+                <option value="Authentication">Authentication</option>
+                <option value="UI / UX">UI / UX</option>
+                <option value="Performance">Performance</option>
+                <option value="Database">Database</option>
+                <option value="API / Backend">API / Backend</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Defect Type</label>
+              <select id="defect-type-select" class="form-control">
+                <option value="Functional Defect">Functional Defect</option>
+                <option value="Regression Defect">Regression Defect</option>
+                <option value="Visual Defect">Visual Defect</option>
+                <option value="Performance Bottleneck">Performance Bottleneck</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+            <div class="form-group">
+              <label class="form-label">Severity</label>
+              <select id="defect-severity-select" class="form-control">
+                <option value="Critical">Critical</option>
+                <option value="High">High</option>
+                <option value="Medium" selected>Medium</option>
+                <option value="Low">Low</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Priority</label>
+              <select id="defect-priority-select" class="form-control">
+                <option value="Critical">Critical</option>
+                <option value="High">High</option>
+                <option value="Medium" selected>Medium</option>
+                <option value="Low">Low</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Steps to Reproduce</label>
+            <textarea id="defect-steps-input" class="form-control" rows="2" placeholder="1. Navigate to... 2. Tap button..."></textarea>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+            <div class="form-group">
+              <label class="form-label">Expected Result</label>
+              <input type="text" id="defect-expected-input" class="form-control" placeholder="User should be logged in">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Actual Result</label>
+              <input type="text" id="defect-actual-input" class="form-control" placeholder="Button unresponsive">
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="document.getElementById('report-defect-dialog').close()">Cancel</button>
+          <button type="submit" class="btn-primary">Submit Defect Report</button>
+        </div>
+      </form>
+    </div>
+  </dialog>
+
+  <!-- 2. Defect Details Dialog -->
+  <dialog id="defect-details-dialog" style="width: 820px; max-width: 95vw;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <span class="defect-key" id="detail-defect-key" style="font-size: 1.1rem;">DEF-108</span>
+          <span id="detail-severity-badge" class="badge badge-critical">Critical</span>
+          <span id="detail-category-badge" class="badge" style="background: rgba(99,102,241,0.2);">Authentication</span>
+        </div>
+        <button class="btn-icon" onclick="document.getElementById('defect-details-dialog').close()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <h2 id="detail-defect-title" style="font-size: 1.35rem; font-weight: 700; margin-bottom: 16px;"></h2>
+
+        <!-- Lifecycle Status Bar -->
+        <div class="glass-card" style="margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; padding: 12px 18px;">
+          <div style="font-size: 0.88rem; font-weight: 600;">Current Workflow Status:</div>
+          <select id="detail-status-select" class="form-select" style="font-weight: 600; width: 160px;">
+            <option value="Reported">Reported</option>
+            <option value="Assigned">Assigned</option>
+            <option value="In Progress">In Progress</option>
+            <option value="In Review">In Review</option>
+            <option value="Resolved">Resolved</option>
+            <option value="Verified">Verified</option>
+            <option value="Closed">Closed</option>
+          </select>
+        </div>
+
+        <!-- Resolution Assistance Panel -->
+        <div class="glass-card" style="border-left: 4px solid var(--accent-primary); margin-bottom: 20px; padding: 18px;">
+          <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--accent-primary); margin-bottom: 10px;">
+            🧠 Intelligent Resolution Assistance
+          </h3>
+          <div id="detail-resolution-assistance-box"></div>
+        </div>
+
+        <!-- Reproduction Details -->
+        <div class="glass-card" style="padding: 14px; margin-bottom: 20px;">
+          <div style="font-size: 0.78rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Steps to Reproduce:</div>
+          <div id="detail-steps" style="font-size: 0.88rem; margin-top: 4px; white-space: pre-line;"></div>
+          <div style="font-size: 0.78rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600; margin-top: 12px;">Actual Result:</div>
+          <div id="detail-actual" style="font-size: 0.88rem; margin-top: 4px; color: #f87171;"></div>
+        </div>
+
+        <!-- Defect Comments Stream -->
+        <div class="glass-card" style="padding: 16px; margin-bottom: 20px;">
+          <h3 style="font-size: 0.95rem; font-weight: 700; color: #f8fafc; margin-bottom: 12px;">💬 Discussion & Triage Notes</h3>
+          <div id="detail-comments-list" style="max-height: 220px; overflow-y: auto; margin-bottom: 14px;"></div>
+          <div style="display: flex; gap: 8px;">
+            <input type="text" id="new-comment-input" class="form-control" placeholder="Add engineering triage comment..." style="font-size: 0.85rem;">
+            <button type="button" class="btn-primary" style="padding: 8px 16px; font-size: 0.82rem;" onclick="defectsController.handlePostComment()">
+              Post
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" onclick="document.getElementById('defect-details-dialog').close()">Close</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- 3. Create Sprint Modal -->
+  <dialog id="sprint-dialog">
+    <div class="modal-content" style="width: 500px; max-width: 95vw;">
+      <div class="modal-header">
+        <h2 class="modal-title" id="sprint-modal-title">Create New Sprint</h2>
+        <button class="btn-icon" onclick="document.getElementById('sprint-dialog').close()">&times;</button>
+      </div>
+      <form id="sprint-form">
+        <input type="hidden" id="sprint-id-hidden">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Sprint Name</label>
+            <input type="text" id="sprint-name" class="form-control" placeholder="Sprint 6 - Payment Stabilization" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Goal / Focus</label>
+            <textarea id="sprint-goal" class="form-control" rows="2" placeholder="Zero critical defect leakage and mobile stability..."></textarea>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="form-group">
+              <label class="form-label">Start Date</label>
+              <input type="date" id="sprint-start" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">End Date</label>
+              <input type="date" id="sprint-end" class="form-control" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Target Velocity (Points)</label>
+            <input type="number" id="sprint-velocity" class="form-control" value="48" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="document.getElementById('sprint-dialog').close()">Cancel</button>
+          <button type="submit" class="btn-primary">Save Sprint</button>
+        </div>
+      </form>
+    </div>
+  </dialog>
+
+  <!-- 4. Create Team Modal -->
+  <dialog id="team-dialog">
+    <div class="modal-content" style="width: 500px; max-width: 95vw;">
+      <div class="modal-header">
+        <h2 class="modal-title" id="team-modal-title">Create Engineering Squad</h2>
+        <button class="btn-icon" onclick="document.getElementById('team-dialog').close()">&times;</button>
+      </div>
+      <form id="team-form">
+        <input type="hidden" id="team-id-hidden">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Squad Name</label>
+            <input type="text" id="team-name" class="form-control" placeholder="e.g. Core Reliability Squad" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Description</label>
+            <textarea id="team-desc" class="form-control" rows="2" placeholder="Focuses on distributed transactions and DB resilience..."></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Team Lead</label>
+            <select id="team-lead-select" class="form-control" required></select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="document.getElementById('team-dialog').close()">Cancel</button>
+          <button type="submit" class="btn-primary">Save Squad</button>
+        </div>
+      </form>
+    </div>
+  </dialog>
+
+  <!-- 5. Add Developer to Team Modal -->
+  <dialog id="add-dev-dialog">
+    <div class="modal-content" style="width: 440px; max-width: 95vw;">
+      <div class="modal-header">
+        <h2 class="modal-title">Add Developer to Squad</h2>
+        <button class="btn-icon" onclick="document.getElementById('add-dev-dialog').close()">&times;</button>
+      </div>
+      <form id="add-dev-form">
+        <input type="hidden" id="add-dev-team-id">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Select Engineer</label>
+            <select id="add-dev-user-select" class="form-control" required></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Role in Squad</label>
+            <input type="text" id="add-dev-role-in-team" class="form-control" value="Senior Developer" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="document.getElementById('add-dev-dialog').close()">Cancel</button>
+          <button type="submit" class="btn-primary">Add Engineer</button>
+        </div>
+      </form>
+    </div>
+  </dialog>
+
+  <!-- 6. Assign Role Dialog (RBAC Management) -->
+  <dialog id="assign-role-dialog">
+    <div class="modal-content" style="width: 480px; max-width: 95vw;">
+      <div class="modal-header">
+        <h2 class="modal-title">⚙️ Assign Platform Role</h2>
+        <button class="btn-icon" onclick="document.getElementById('assign-role-dialog').close()">&times;</button>
+      </div>
+      <form id="assign-role-form">
+        <div class="modal-body">
+          <div style="background: rgba(15, 23, 42, 0.6); padding: 14px; border-radius: 8px; margin-bottom: 16px; border: 1px solid var(--border-color);">
+            <div style="font-size: 0.78rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Target User:</div>
+            <div id="assign-role-user-name" style="font-size: 1.1rem; font-weight: 700; color: #f8fafc; margin-top: 2px;"></div>
+            <div style="margin-top: 6px; font-size: 0.8rem; color: var(--text-secondary);">
+              Current Role: <span id="assign-role-current" class="badge" style="background: rgba(99,102,241,0.2); color: #818cf8;">Developer</span>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label class="form-label">Select New RBAC Role</label>
+            <select id="assign-role-select" class="form-control" style="font-size: 0.95rem; font-weight: 600;">
+              <option value="Admin">Admin - Full Superuser & Governance Access</option>
+              <option value="Project Manager">Project Manager - Sprints, Teams & Project Scope</option>
+              <option value="Developer">Developer - Code, Triage & Resolution Assistance</option>
+              <option value="QA / Tester">QA / Tester - Defect Verification & Test Runs</option>
+              <option value="Reporter">Reporter - Read & Log Defects Only</option>
+            </select>
+          </div>
+
+          <div style="font-size: 0.78rem; color: var(--text-muted); line-height: 1.45;">
+            🔒 Changing the role will immediately update the user's JWT permissions matrix and session scope across the API.
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="document.getElementById('assign-role-dialog').close()">Cancel</button>
+          <button type="submit" class="btn-primary">Update User Role</button>
+        </div>
+      </form>
+    </div>
+  </dialog>
+
+  <!-- 7. RAG Chunk Inspector Dialog -->
+  <dialog id="rag-chunk-inspector-dialog" style="width: 820px; max-width: 95vw;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div>
+          <h2 class="modal-title" id="rag-inspector-doc-title">Document Vector Chunks</h2>
+          <div id="rag-inspector-doc-meta" style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;"></div>
+        </div>
+        <button class="btn-icon" onclick="document.getElementById('rag-chunk-inspector-dialog').close()">&times;</button>
+      </div>
+      <div class="modal-body" style="max-height: 65vh; overflow-y: auto;">
+        <div id="rag-inspector-chunks-container"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" onclick="document.getElementById('rag-chunk-inspector-dialog').close()">Close</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- ========================================== -->
+  <!-- AUTHENTIC SOCIAL OAUTH DIALOGS (Image 2) -->
+  <!-- ========================================== -->
+
+  <!-- Google OAuth Modal -->
+  <dialog id="modal-google-oauth">
+    <div class="oauth-dialog-card" style="text-align: center;">
+      <div style="margin-bottom: 16px;">
+        <svg width="40" height="40" viewBox="0 0 24 24">
+          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+        </svg>
+      </div>
+      <h3 style="font-size: 1.35rem; font-weight: 500; color: #202124;">Sign in with Google</h3>
+      <p style="font-size: 0.88rem; color: #5f6368; margin-top: 4px; margin-bottom: 24px;">to continue to <strong>BugFlow</strong></p>
+
+      <div style="text-align: left; margin-bottom: 24px;">
+        <input type="text" class="form-control" value="madhav@bugflow.io" style="background: #fff; border: 1px solid #dadce0; color: #202124; height: 48px; border-radius: 4px;" readonly>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <button type="button" style="background: none; border: none; color: #1a73e8; font-weight: 500; cursor: pointer;" onclick="document.getElementById('modal-google-oauth').close()">Cancel</button>
+        <button type="button" class="btn-primary" style="background: #1a73e8; border-radius: 4px; padding: 10px 24px;" onclick="authController.executeOAuthLogin('google')">
+          Next &rarr;
+        </button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Microsoft OAuth Modal -->
+  <dialog id="modal-microsoft-oauth">
+    <div class="oauth-dialog-card msft-theme" style="text-align: left; max-width: 440px;">
+      <div style="margin-bottom: 16px;">
+        <svg width="24" height="24" viewBox="0 0 23 23">
+          <path fill="#f35325" d="M1 1h10v10H1z"/>
+          <path fill="#81bc06" d="M12 1h10v10H12z"/>
+          <path fill="#05a6f0" d="M1 12h10v10H1z"/>
+          <path fill="#ffba08" d="M12 12h10v10H12z"/>
+        </svg>
+      </div>
+      <h3 style="font-size: 1.35rem; font-weight: 600; color: #1b1b1b; margin-bottom: 4px;">Sign in</h3>
+      <p style="font-size: 0.88rem; color: #1b1b1b; margin-bottom: 20px;">to continue to BugFlow Identity Provider</p>
+
+      <input type="text" class="form-control" value="sarah.pm@defecttracker.com" style="background: #fff; border: 1px solid #868686; color: #1b1b1b; height: 42px; border-radius: 0; margin-bottom: 20px;" readonly>
+
+      <div style="display: flex; justify-content: flex-end; gap: 8px;">
+        <button type="button" class="btn-secondary" style="border-radius: 0; padding: 8px 24px;" onclick="document.getElementById('modal-microsoft-oauth').close()">Back</button>
+        <button type="button" class="btn-primary" style="background: #0067b8; border-radius: 0; padding: 8px 24px;" onclick="authController.executeOAuthLogin('microsoft')">Next</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- GitHub OAuth Modal -->
+  <dialog id="modal-github-oauth">
+    <div class="oauth-dialog-card dark-theme" style="text-align: center;">
+      <div style="margin-bottom: 16px;">
+        <svg width="44" height="44" fill="#f0f6fc" viewBox="0 0 16 16">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+        </svg>
+      </div>
+      <h3 style="font-size: 1.3rem; font-weight: 600; color: #f0f6fc; margin-bottom: 6px;">Sign in to GitHub</h3>
+      <p style="font-size: 0.85rem; color: #8b949e; margin-bottom: 24px;">to authorize <strong>BugFlow OAuth App</strong></p>
+
+      <button type="button" class="btn-primary" style="width: 100%; background: #238636; border-color: rgba(240,246,252,0.1); height: 42px;" onclick="authController.executeOAuthLogin('github')">
+        Authorize & Sign In as Alex Chen
+      </button>
+      <div style="margin-top: 14px;">
+        <a href="javascript:void(0)" onclick="document.getElementById('modal-github-oauth').close()" style="color: #58a6ff; font-size: 0.8rem;">Cancel</a>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- LinkedIn OAuth Modal -->
+  <dialog id="modal-linkedin-oauth">
+    <div class="oauth-dialog-card" style="text-align: center;">
+      <div style="margin-bottom: 16px;">
+        <svg width="42" height="42" viewBox="0 0 24 24" fill="#0a66c2">
+          <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
+        </svg>
+      </div>
+      <h3 style="font-size: 1.3rem; font-weight: 600; color: #202124; margin-bottom: 4px;">Sign in to LinkedIn</h3>
+      <p style="font-size: 0.85rem; color: #5f6368; margin-bottom: 22px;">to connect with <strong>BugFlow</strong></p>
+
+      <button type="button" class="btn-primary" style="width: 100%; background: #0a66c2; height: 42px;" onclick="authController.executeOAuthLogin('linkedin')">
+        Sign in as Priya Sharma (QA)
+      </button>
+      <div style="margin-top: 14px;">
+        <a href="javascript:void(0)" onclick="document.getElementById('modal-linkedin-oauth').close()" style="color: #0a66c2; font-size: 0.8rem;">Cancel</a>
+      </div>
+    </div>
+  </dialog>
+
+
+  <!-- ========================================================================== -->
+  <!-- FULLSCREEN SPLIT-SCREEN AUTHENTICATION OVERLAY (Matching Images 1, 2, 3)  -->
+  <!-- ========================================================================== -->
+  <div id="auth-overlay">
+    <div class="auth-split-wrapper">
+      
+      <!-- LEFT HERO SHOWCASE (Futuristic 3D Robot & Hologram Stage) -->
+      <div class="auth-hero-showcase">
+        <div>
+          <!-- Brand Header -->
+          <div class="hero-brand-block">
+            <div class="hero-brand-row">
+              <div class="hero-brand-logo">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                  <path d="m8 2 1.88 1.88"></path>
+                  <path d="M14.12 3.88 16 2"></path>
+                  <path d="M9 7.13v-1a3.003 3.003 0 1 1 6 0v1"></path>
+                  <path d="M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6"></path>
+                  <path d="M12 20v-9"></path>
+                  <path d="M6.53 9C4.6 8.8 3 7.1 3 5"></path>
+                  <path d="M6 13H2"></path>
+                  <path d="M3 21c0-2.1 1.7-3.9 3.8-4"></path>
+                  <path d="M20.97 5c0 2.1-1.6 3.8-3.5 4"></path>
+                  <path d="M22 13h-4"></path>
+                  <path d="M17.2 17c2.1.1 3.8 1.9 3.8 4"></path>
+                </svg>
+              </div>
+              <div class="hero-brand-name">BugFlow</div>
+            </div>
+            <div class="hero-brand-subtitle">
+              Intelligent Software Defect Tracking System<br>with Resolution Assistance
+            </div>
+            <div class="hero-ai-badge">
+              <span class="pulse-dot"></span> AI Powered
+            </div>
+          </div>
+
+          <!-- Main High-Impact Tagline (Matches Mockups 1 & 2) -->
+          <div class="hero-title-block">
+            <h1 class="hero-main-heading">
+              <div>Detect Faster</div>
+              <div class="hero-gradient-text">Resolve Smarter</div>
+              <div>Build Better</div>
+            </h1>
+            <p class="hero-desc">
+              AI-powered defect tracking, similarity detection, root cause analysis and resolution assistance for modern teams.
+            </p>
+          </div>
+
+          <!-- 3D Holographic AI Cyber Bug Mascot Stage (Matches Mockups 1 & 3) -->
+          <div class="hero-stage-container">
+            <div class="isometric-base-grid"></div>
+            <div class="hologram-pulse-ring ring-1"></div>
+            <div class="hologram-pulse-ring ring-2"></div>
+            
+            <!-- 3D Cyber Bug Glass Cube Centerpiece -->
+            <div class="cyber-bug-cube-wrapper">
+              <div class="cyber-bug-cube">
+                <!-- 3D Luminous Bug Mascot SVG -->
+                <svg width="68" height="68" viewBox="0 0 100 100" fill="none" class="cyber-bug-svg">
+                  <defs>
+                    <linearGradient id="cyberBugGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="#38bdf8" />
+                      <stop offset="50%" stop-color="#818cf8" />
+                      <stop offset="100%" stop-color="#ec4899" />
+                    </linearGradient>
+                    <filter id="neonGlow" x="-30%" y="-30%" width="160%" height="160%">
+                      <feGaussianBlur stdDeviation="4" result="blur" />
+                      <feMerge>
+                        <feMergeNode in="blur"/>
+                        <feMergeNode in="SourceGraphic"/>
+                      </feMerge>
+                    </filter>
+                  </defs>
+                  <!-- Antennae -->
+                  <path d="M38 32 C30 20 20 18 16 20" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round" filter="url(#neonGlow)"/>
+                  <circle cx="16" cy="20" r="3" fill="#22d3ee" filter="url(#neonGlow)"/>
+                  <path d="M62 32 C70 20 80 18 84 20" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round" filter="url(#neonGlow)"/>
+                  <circle cx="84" cy="20" r="3" fill="#22d3ee" filter="url(#neonGlow)"/>
+                  <!-- Bug Body / Head -->
+                  <ellipse cx="50" cy="38" rx="14" ry="11" fill="url(#cyberBugGlow)" filter="url(#neonGlow)"/>
+                  <ellipse cx="45" cy="36" rx="2.5" ry="3.5" fill="#f8fafc"/>
+                  <ellipse cx="55" cy="36" rx="2.5" ry="3.5" fill="#f8fafc"/>
+                  <!-- Thorax / Carapace -->
+                  <path d="M32 46 C32 46 50 42 68 46 C74 62 66 84 50 86 C34 84 26 62 32 46 Z" fill="url(#cyberBugGlow)" opacity="0.95" filter="url(#neonGlow)"/>
+                  <!-- Wing divider & Cyber circuit lines -->
+                  <line x1="50" y1="46" x2="50" y2="85" stroke="#0f172a" stroke-width="2.5" stroke-linecap="round"/>
+                  <path d="M38 56 Q50 62 62 56" stroke="rgba(255,255,255,0.7)" stroke-width="1.8" fill="none"/>
+                  <path d="M40 70 Q50 76 60 70" stroke="rgba(255,255,255,0.7)" stroke-width="1.8" fill="none"/>
+                  <!-- Legs -->
+                  <path d="M30 48 L14 42" stroke="#818cf8" stroke-width="2.2" stroke-linecap="round"/>
+                  <path d="M70 48 L86 42" stroke="#818cf8" stroke-width="2.2" stroke-linecap="round"/>
+                  <path d="M28 62 L12 66" stroke="#818cf8" stroke-width="2.2" stroke-linecap="round"/>
+                  <path d="M72 62 L88 66" stroke="#818cf8" stroke-width="2.2" stroke-linecap="round"/>
+                  <path d="M32 76 L18 86" stroke="#818cf8" stroke-width="2.2" stroke-linecap="round"/>
+                  <path d="M68 76 L82 86" stroke="#818cf8" stroke-width="2.2" stroke-linecap="round"/>
+                </svg>
+              </div>
+            </div>
+
+            <!-- Floating Interactive Action Chips (Matches Mockups 1 & 3) -->
+            <div class="floating-chip chip-detect">
+              <span>🔍</span> <span>Detect</span>
+            </div>
+            <div class="floating-chip chip-analyze">
+              <span>🧠</span> <span>Analyze</span>
+            </div>
+            <div class="floating-chip chip-resolve">
+              <span>🛠️</span> <span>Resolve</span>
+            </div>
+            <div class="floating-chip chip-recommend">
+              <span>💡</span> <span>Recommend</span>
+            </div>
+
+            <!-- Satellite AI Orbit Nodes -->
+            <div class="orbit-node node-ai">
+              <span>✨</span>
+            </div>
+            <div class="orbit-node node-dupe">
+              <span>⚡</span>
+            </div>
+          </div>
+
+          <!-- Feature Bullets Checklist (Matches Mockups 1 & 2 exactly) -->
+          <div class="hero-features-list">
+            <div class="hero-feature-item">
+              <div class="feature-icon-badge">🤖</div>
+              <span>AI Analysis & Recommendations</span>
+            </div>
+            <div class="hero-feature-item">
+              <div class="feature-icon-badge">🔍</div>
+              <span>Smart Duplicate Detection</span>
+            </div>
+            <div class="hero-feature-item">
+              <div class="feature-icon-badge">🛠️</div>
+              <span>Root Cause Investigation</span>
+            </div>
+            <div class="hero-feature-item">
+              <div class="feature-icon-badge">👥</div>
+              <span>Seamless Team Collaboration</span>
+            </div>
+            <div class="hero-feature-item">
+              <div class="feature-icon-badge">🔌</div>
+              <span>Powerful Integrations</span>
+            </div>
+            <div class="hero-feature-item">
+              <div class="feature-icon-badge">🛡️</div>
+              <span>Enterprise Security</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hero Bottom Footer & Stats Ticker (Matches Mockup 1 exactly) -->
+        <div class="hero-stats-ticker">
+          <div class="stat-metric-item">
+            <div class="stat-metric-num">50K+</div>
+            <div class="stat-metric-label">Defects Tracked</div>
+          </div>
+          <div class="stat-metric-item">
+            <div class="stat-metric-num">99.9%</div>
+            <div class="stat-metric-label">Uptime</div>
+          </div>
+          <div class="stat-metric-item">
+            <div class="stat-metric-num">250+</div>
+            <div class="stat-metric-label">Teams</div>
+          </div>
+          <div class="stat-metric-item">
+            <div class="stat-metric-num" style="color: #38bdf8;">AI</div>
+            <div class="stat-metric-label">Powered</div>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- RIGHT AUTH CARDS CONTAINER (Full Multi-Card In-Place Transitions) -->
+      <div class="auth-form-card">
+
+        <!-- ============================================== -->
+        <!-- CARD 1: WELCOME BACK (Default Sign In Screen) -->
+        <!-- ============================================== -->
+        <div class="auth-state-card active-card" id="card-welcome-back">
+          <div class="auth-card-title">Welcome Back</div>
+          <div class="auth-card-subtitle">Sign in to your BugFlow account</div>
+
+          <!-- Email Login vs OTP Login Pills -->
+          <div class="auth-tab-pill-box">
+            <button class="auth-pill-tab active" data-tab="email">Email Login</button>
+            <button class="auth-pill-tab" data-tab="otp">OTP Login</button>
+          </div>
+
+          <!-- 1A: Email & Password Form -->
+          <div id="login-form-wrap">
+            <form id="login-form">
+              <div class="form-group" style="margin-bottom: 14px;">
+                <label class="form-label">Email address</label>
+                <div class="input-with-icon">
+                  <span class="field-icon">✉️</span>
+                  <input type="text" id="login-username" placeholder="you@example.com" value="madhav@bugflow.io" required>
+                </div>
+              </div>
+
+              <div class="form-group" style="margin-bottom: 8px;">
+                <label class="form-label">Password</label>
+                <div class="input-with-icon">
+                  <span class="field-icon">🔒</span>
+                  <input type="password" id="login-password" value="Dev@123" required>
+                  <span class="toggle-password-visibility" data-target="login-password">👁️</span>
+                </div>
+              </div>
+
+              <div class="auth-options-row">
+                <label class="remember-label">
+                  <input type="checkbox" id="remember-me-checkbox" checked style="accent-color: #6366f1;">
+                  <span>Remember me</span>
+                </label>
+                <a href="javascript:void(0)" data-switch-card="card-forgot-password" style="color: #818cf8; font-weight: 500;">Forgot Password?</a>
+              </div>
+
+              <button type="submit" class="btn-auth-submit">
+                <span>Sign In</span>
+                <span>&rarr;</span>
+              </button>
+            </form>
+          </div>
+
+          <!-- 1B: Quick OTP Login Form -->
+          <div id="login-otp-form-wrap" style="display: none;">
+            <form id="login-otp-form">
+              <div class="form-group" style="margin-bottom: 16px;">
+                <label class="form-label">Enter your registered email</label>
+                <div class="input-with-icon">
+                  <span class="field-icon">✉️</span>
+                  <input type="email" id="login-otp-email" placeholder="you@example.com" value="madhav@bugflow.io" required>
+                </div>
+              </div>
+              <button type="submit" class="btn-auth-submit">
+                <span>Send 6-Digit OTP Code</span>
+                <span>&rarr;</span>
+              </button>
+            </form>
+          </div>
+
+          <!-- Divider -->
+          <div class="auth-divider-line">
+            <span>or continue with</span>
+          </div>
+
+          <!-- 4 Social SSO Buttons (Matching Image 1 & 2) -->
+          <div class="social-buttons-stack">
+            <button type="button" class="btn-social-sso" data-provider="google">
+              <span class="social-logo-svg">
+                <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+              </span>
+              <span>Continue with Google</span>
+            </button>
+
+            <button type="button" class="btn-social-sso" data-provider="microsoft">
+              <span class="social-logo-svg">
+                <svg width="18" height="18" viewBox="0 0 23 23"><path fill="#f35325" d="M1 1h10v10H1z"/><path fill="#81bc06" d="M12 1h10v10H12z"/><path fill="#05a6f0" d="M1 12h10v10H1z"/><path fill="#ffba08" d="M12 12h10v10H12z"/></svg>
+              </span>
+              <span>Continue with Microsoft</span>
+            </button>
+
+            <button type="button" class="btn-social-sso" data-provider="github">
+              <span class="social-logo-svg">
+                <svg width="18" height="18" fill="#f0f6fc" viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+              </span>
+              <span>Continue with GitHub</span>
+            </button>
+
+            <button type="button" class="btn-social-sso" data-provider="linkedin">
+              <span class="social-logo-svg">
+                <svg width="18" height="18" fill="#0a66c2" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
+              </span>
+              <span>Continue with LinkedIn</span>
+            </button>
+          </div>
+
+          <!-- Face Biometric Button -->
+          <button type="button" class="btn-face-biometric" id="btn-open-face-auth">
+            <span>👤</span>
+            <span>Use Face Authentication</span>
+          </button>
+
+          <!-- QR Code Biometric Button -->
+          <button type="button" class="btn-face-biometric" id="btn-open-qr-auth" style="margin-top: 8px; border-color: rgba(147, 51, 234, 0.4); background: rgba(147, 51, 234, 0.08);">
+            <span>📱</span>
+            <span>Instant QR Code Login</span>
+          </button>
+
+          <!-- 1-Click Demo Accounts -->
+          <div class="auth-demo-chips">
+            <div class="demo-chips-title">Quick Demo Login (1-Click)</div>
+            <div class="demo-chips-list">
+              <button class="demo-chip-btn" data-role="Developer">Madhav (Dev)</button>
+              <button class="demo-chip-btn" data-role="Project Manager">Sarah (PM)</button>
+              <button class="demo-chip-btn" data-role="Admin">Admin</button>
+              <button class="demo-chip-btn" data-role="QA">Priya (QA)</button>
+            </div>
+          </div>
+
+          <!-- Bottom Switch to Register -->
+          <div class="auth-bottom-switch">
+            Don't have an account? <a href="javascript:void(0)" data-switch-card="card-register">Sign up</a>
+          </div>
+        </div>
+
+
+        <!-- ============================================== -->
+        <!-- CARD 2: FACE AUTHENTICATION (Image 1 & 2)     -->
+        <!-- ============================================== -->
+        <div class="auth-state-card" id="card-face-auth">
+          <button type="button" class="btn-card-back" data-switch-card="card-welcome-back">
+            <span>&larr;</span> <span>Back</span>
+          </button>
+
+          <div class="auth-card-title">Face Authentication</div>
+          <div class="auth-card-subtitle">Look at the camera to authenticate</div>
+
+          <!-- Cyber Biometric HUD Box -->
+          <div class="face-hud-box">
+            <!-- Corner Reticles -->
+            <div class="face-corner-reticle corner-tl"></div>
+            <div class="face-corner-reticle corner-tr"></div>
+            <div class="face-corner-reticle corner-bl"></div>
+            <div class="face-corner-reticle corner-br"></div>
+
+            <!-- Sweeping Laser Scan Line -->
+            <div class="laser-scan-line"></div>
+
+            <!-- Biometric Mesh Overlay SVG -->
+            <svg class="face-biometric-mesh-svg" viewBox="0 0 200 240">
+              <circle cx="100" cy="120" r="75" stroke="rgba(56, 189, 248, 0.4)" stroke-width="1.2" stroke-dasharray="4 4" fill="none"/>
+              <ellipse cx="100" cy="120" rx="55" ry="70" stroke="rgba(6, 182, 212, 0.5)" stroke-width="1" fill="none"/>
+              <!-- Landmark points -->
+              <circle cx="75" cy="100" r="3" fill="#38bdf8"/>
+              <circle cx="125" cy="100" r="3" fill="#38bdf8"/>
+              <circle cx="100" cy="125" r="2.5" fill="#38bdf8"/>
+              <circle cx="85" cy="150" r="2" fill="#38bdf8"/>
+              <circle cx="115" cy="150" r="2" fill="#38bdf8"/>
+              <circle cx="100" cy="160" r="2.5" fill="#38bdf8"/>
+              <!-- Geometry connector lines -->
+              <polygon points="75,100 125,100 100,125" stroke="rgba(56, 189, 248, 0.5)" stroke-width="0.8" fill="rgba(56, 189, 248, 0.05)"/>
+              <polygon points="75,100 100,125 85,150" stroke="rgba(56, 189, 248, 0.4)" stroke-width="0.8" fill="none"/>
+              <polygon points="125,100 100,125 115,150" stroke="rgba(56, 189, 248, 0.4)" stroke-width="0.8" fill="none"/>
+              <polygon points="85,150 115,150 100,160" stroke="rgba(56, 189, 248, 0.4)" stroke-width="0.8" fill="rgba(56, 189, 248, 0.05)"/>
+            </svg>
+
+            <!-- Live Webcam Video Preview -->
+            <video id="face-webcam-preview" autoplay playsinline muted style="width: 100%; height: 100%; object-fit: cover; display: none;"></video>
+
+            <!-- Holographic Facial Portrait (Matches Mockup 1, 2, 3) -->
+            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400" alt="Facial Landmarks" class="face-portrait-preview" id="face-portrait-fallback">
+          </div>
+
+          <!-- Status & Feedback -->
+          <div style="text-align: center; margin-top: 14px;">
+            <div id="face-scan-status-text" style="font-size: 0.88rem; font-weight: 600; color: #38bdf8;">
+              Aligning biometric facial reticle...
+            </div>
+            
+            <div class="face-scan-status-pill" id="face-scan-status-pill" style="display: none;">
+              ✓ Face recognized successfully!
+            </div>
+          </div>
+
+          <button type="button" class="btn-auth-submit" id="btn-face-continue" style="margin-top: 24px;">
+            <span>Continue to Dashboard</span>
+            <span>&rarr;</span>
+          </button>
+        </div>
+
+
+        <!-- ============================================== -->
+        <!-- CARD 2b: QR CODE AUTHENTICATION               -->
+        <!-- ============================================== -->
+        <div class="auth-state-card" id="card-qr-auth">
+          <button type="button" class="btn-card-back" data-switch-card="card-welcome-back">
+            <span>&larr;</span> <span>Back</span>
+          </button>
+
+          <div class="auth-card-title">Instant QR Login</div>
+          <div class="auth-card-subtitle">Scan this QR code with the BUGFLOW Mobile App to sign in instantly</div>
+
+          <!-- Cyber QR HUD Box with Sweeping Laser -->
+          <div class="face-hud-box" style="margin: 20px auto; width: 220px; height: 220px; background: rgba(15, 23, 42, 0.85); border: 2px solid rgba(139, 92, 246, 0.4); border-radius: 16px; position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5), inset 0 0 20px rgba(139,92,246,0.15);">
+            <div class="face-corner-reticle corner-tl"></div>
+            <div class="face-corner-reticle corner-tr"></div>
+            <div class="face-corner-reticle corner-bl"></div>
+            <div class="face-corner-reticle corner-br"></div>
+            <div class="laser-scan-line"></div>
+            
+            <div id="qr-code-svg-render" style="width: 180px; height: 180px; display: flex; align-items: center; justify-content: center;">
+              <div class="spinner" style="width: 32px; height: 32px;"></div>
+            </div>
+          </div>
+
+          <div style="text-align: center; margin-top: 8px;">
+            <div id="qr-expiry-countdown" style="font-size: 0.82rem; color: var(--text-muted); font-family: var(--font-mono);">
+              Expires in 120s
+            </div>
+            <div class="face-scan-status-pill" id="qr-scan-status-pill" style="margin-top: 8px;">
+              <span class="status-dot pulsing"></span> Waiting for mobile scan...
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 8px; margin-top: 18px;">
+            <button type="button" class="btn-secondary" id="btn-refresh-qr" style="flex: 1; padding: 10px 8px; font-size: 0.82rem;">
+              🔄 Refresh
+            </button>
+            <button type="button" class="btn-primary" id="btn-simulate-qr-scan" style="flex: 2; padding: 10px 10px; font-size: 0.82rem; background: linear-gradient(135deg, #6366f1, #a855f7);">
+              📲 Simulate Mobile Scan
+            </button>
+          </div>
+        </div>
+
+
+        <!-- ============================================== -->
+        <!-- CARD 3: FORGOT PASSWORD (Image 1 & 2)         -->
+        <!-- ============================================== -->
+        <div class="auth-state-card" id="card-forgot-password">
+          <button type="button" class="btn-card-back" data-switch-card="card-welcome-back">
+            <span>&larr;</span> <span>Back</span>
+          </button>
+
+          <div class="card-header-icon-circle icon-purple">
+            <span>✉️</span>
+          </div>
+
+          <div class="auth-card-title" style="text-align: center;">Forgot Password</div>
+          <div class="auth-card-subtitle" style="text-align: center;">Enter your registered email to receive OTP</div>
+
+          <form id="forgot-password-form">
+            <div class="form-group" style="margin-bottom: 20px;">
+              <label class="form-label">Email address</label>
+              <div class="input-with-icon">
+                <span class="field-icon">✉️</span>
+                <input type="email" id="forgot-email-input" placeholder="you@example.com" value="madhav@bugflow.io" required>
+              </div>
+            </div>
+
+            <button type="submit" class="btn-auth-submit">
+              <span>Send OTP</span>
+              <span>&rarr;</span>
+            </button>
+          </form>
+        </div>
+
+
+        <!-- ============================================== -->
+        <!-- CARD 4: VERIFY OTP (Image 1 & 2)              -->
+        <!-- ============================================== -->
+        <div class="auth-state-card" id="card-verify-otp">
+          <button type="button" class="btn-card-back" data-switch-card="card-forgot-password">
+            <span>&larr;</span> <span>Back</span>
+          </button>
+
+          <div class="card-header-icon-circle icon-blue">
+            <span>🛡️</span>
+          </div>
+
+          <div class="auth-card-title" style="text-align: center;">Verify OTP</div>
+          <div class="auth-card-subtitle" style="text-align: center;">
+            Enter the 6-digit OTP sent to <span id="verify-otp-email-display" style="color: #f8fafc; font-weight: 600;">madhav@bugflow.io</span>
+          </div>
+
+          <!-- 6 Separate Digit Boxes -->
+          <div class="otp-digit-inputs">
+            <input type="text" maxlength="1" class="otp-box-digit" autofocus>
+            <input type="text" maxlength="1" class="otp-box-digit">
+            <input type="text" maxlength="1" class="otp-box-digit">
+            <input type="text" maxlength="1" class="otp-box-digit">
+            <input type="text" maxlength="1" class="otp-box-digit">
+            <input type="text" maxlength="1" class="otp-box-digit">
+          </div>
+
+          <div style="text-align: center; margin-bottom: 20px; font-size: 0.82rem; color: #94a3b8;" id="otp-resend-countdown">
+            Resend OTP in 00:30
+          </div>
+
+          <button type="button" class="btn-auth-submit" id="btn-verify-otp">
+            <span>Verify OTP</span>
+            <span>&rarr;</span>
+          </button>
+        </div>
+
+
+        <!-- ============================================== -->
+        <!-- CARD 5: RESET PASSWORD (Image 1 & 2)           -->
+        <!-- ============================================== -->
+        <div class="auth-state-card" id="card-reset-password">
+          <button type="button" class="btn-card-back" data-switch-card="card-verify-otp">
+            <span>&larr;</span> <span>Back</span>
+          </button>
+
+          <div class="card-header-icon-circle icon-green">
+            <span>🔒</span>
+          </div>
+
+          <div class="auth-card-title" style="text-align: center;">Reset Password</div>
+          <div class="auth-card-subtitle" style="text-align: center;">Create a new password for your account</div>
+
+          <div class="form-group" style="margin-bottom: 14px;">
+            <label class="form-label">New Password</label>
+            <div class="input-with-icon">
+              <span class="field-icon">🔒</span>
+              <input type="password" id="reset-new-password" placeholder="Enter new password" required>
+              <span class="toggle-password-visibility" data-target="reset-new-password">👁️</span>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 14px;">
+            <label class="form-label">Confirm Password</label>
+            <div class="input-with-icon">
+              <span class="field-icon">🔒</span>
+              <input type="password" id="reset-confirm-password" placeholder="Confirm new password" required>
+              <span class="toggle-password-visibility" data-target="reset-confirm-password">👁️</span>
+            </div>
+          </div>
+
+          <!-- Password Security Requirements Live Checklist -->
+          <div class="password-criteria-list">
+            <div class="criteria-item" id="crit-len">
+              <span class="check-mark">○</span>
+              <span>At least 8 characters</span>
+            </div>
+            <div class="criteria-item" id="crit-upper">
+              <span class="check-mark">○</span>
+              <span>Include uppercase letter</span>
+            </div>
+            <div class="criteria-item" id="crit-lower">
+              <span class="check-mark">○</span>
+              <span>Include lowercase letter</span>
+            </div>
+            <div class="criteria-item" id="crit-num">
+              <span class="check-mark">○</span>
+              <span>Include number</span>
+            </div>
+          </div>
+
+          <button type="button" class="btn-auth-submit" id="btn-reset-password-final">
+            <span>Reset Password</span>
+            <span>&rarr;</span>
+          </button>
+        </div>
+
+
+        <!-- ============================================== -->
+        <!-- CARD 6: REGISTER / SIGN UP                     -->
+        <!-- ============================================== -->
+        <div class="auth-state-card" id="card-register">
+          <button type="button" class="btn-card-back" data-switch-card="card-welcome-back">
+            <span>&larr;</span> <span>Back to Sign In</span>
+          </button>
+
+          <div class="auth-card-title">Create Account</div>
+          <div class="auth-card-subtitle">Join your engineering team on BugFlow</div>
+
+          <form id="register-form">
+            <div class="form-group" style="margin-bottom: 12px;">
+              <label class="form-label">Full Name</label>
+              <input type="text" id="reg-fullname" class="form-control" placeholder="Priya Sharma" required>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+              <div class="form-group">
+                <label class="form-label">Username</label>
+                <input type="text" id="reg-username" class="form-control" placeholder="priya_qa" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Role</label>
+                <select id="reg-role" class="form-control">
+                  <option value="Developer">Developer</option>
+                  <option value="QA / Tester">QA / Tester</option>
+                  <option value="Project Manager">Project Manager</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 12px;">
+              <label class="form-label">Work Email</label>
+              <input type="email" id="reg-email" class="form-control" placeholder="priya@bugflow.io" required>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 20px;">
+              <label class="form-label">Password</label>
+              <input type="password" id="reg-password" class="form-control" placeholder="Strong password..." required>
+            </div>
+
+            <button type="submit" class="btn-auth-submit">
+              <span>Create Account</span>
+              <span>&rarr;</span>
+            </button>
+          </form>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="/static/js/api.js"></script>
+  <script src="/static/js/auth.js"></script>
+  <script src="/static/js/dashboard.js"></script>
+  <script src="/static/js/defects.js"></script>
+  <script src="/static/js/kanban.js"></script>
+  <script src="/static/js/sprints.js"></script>
+  <script src="/static/js/teams.js"></script>
+  <script src="/static/js/intelligence.js"></script>
+  <script src="/static/js/analytics.js"></script>
+  <script src="/static/js/reports.js"></script>
+  <script src="/static/js/api_docs.js"></script>
+  <script src="/static/js/gemini_chat.js"></script>
+  <script src="/static/js/calendar.js"></script>
+  <script src="/static/js/activity.js"></script>
+  <script src="/static/js/integrations.js"></script>
+  <script src="/static/js/rag.js"></script>
+  <script src="/static/js/administration.js"></script>
+  <script src="/static/js/testing.js"></script>
+  <script src="/static/js/app.js"></script>
+</body>
+</html>

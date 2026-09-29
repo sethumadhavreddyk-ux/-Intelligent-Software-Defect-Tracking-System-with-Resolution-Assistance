@@ -1,0 +1,56 @@
+name: CI/CD Pipeline - Intelligent Defect Tracker
+
+on:
+  push:
+    branches: [ "main", "master", "develop" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  test:
+    name: Run Automated Tests & Validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+
+      - name: Run Test Suite
+        env:
+          SECRET_KEY: test-secret-key-ci-environment
+          DATABASE_URL: sqlite:///./test_ci.db
+          ENABLE_SEED_DATA: "true"
+        run: |
+          cd backend
+          pytest -v tests/
+
+      - name: Validate OpenAPI Schema Generation
+        run: |
+          cd backend
+          python -c "from app.main import app; from fastapi.openapi.utils import get_openapi; schema = get_openapi(title=app.title, version=app.version, routes=app.routes); print(f'Successfully validated OpenAPI schema with {len(schema[\"paths\"])} routes')"
+
+  build:
+    name: Container Build Verification
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker Image
+        run: |
+          docker build -t defect-tracker-api:latest -f backend/Dockerfile backend/
