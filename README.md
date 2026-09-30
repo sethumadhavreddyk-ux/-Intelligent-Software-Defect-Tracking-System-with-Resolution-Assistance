@@ -78,14 +78,10 @@ Report ➔ Assign ➔ Track ➔ Analyze ➔ Assist Resolution ➔ Fix ➔ Verify
 # Navigate to project directory
 cd defect-tracker
 
-# Launch server
-python run.py
-```
 
-The system will start on **`http://localhost:8000`** with pre-seeded demo data:
-* **Web UI:** [http://localhost:8000](http://localhost:8000)
-* **Interactive Swagger API Docs:** [http://localhost:8000/docs](http://localhost:8000/docs)
-* **ReDoc API Spec:** [http://localhost:8000/redoc](http://localhost:8000/redoc)
+The system will start on :
+* **Web UI:** [(https://gqtvmpqv-8000.inc1.devtunnels.ms/)](https://gqtvmpqv-8000.inc1.devtunnels.ms/)]
+* **Interactive Swagger API Docs:** ([https://gqtvmpqv-8000.inc1.devtunnels.ms/docs](https://gqtvmpqv-8000.inc1.devtunnels.ms/docs))
 
 ---
 
@@ -107,7 +103,7 @@ You can use the **1-Click Quick Demo Role Switcher** on the login screen, or sig
 
 Run the complete 14-test verification suite:
 ```bash
-cd backend
+ cd defect-tracker
 python -m pytest -v tests/
 ```
 All tests validate:
@@ -131,8 +127,8 @@ Run with PostgreSQL and pgvector using Docker Compose:
 ```bash
 docker-compose up --build
 ```
-* API & UI: `http://localhost:8000`
-* PostgreSQL: `localhost:5432` (database: `defect_tracking_db`)
+* API & UI:[ `http://localhost:8000`](https://gqtvmpqv-8000.inc1.devtunnels.ms/docs)
+* PostgreSQL:  (database: `defect_tracking_db`)
 
 ---
 
