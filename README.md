@@ -127,7 +127,7 @@ Run with PostgreSQL and pgvector using Docker Compose:
 ```bash
 docker-compose up --build
 ```
-* API & UI:[ `http://localhost:8000`](https://gqtvmpqv-8000.inc1.devtunnels.ms/docs)
+* API & UI:[(https://gqtvmpqv-8000.inc1.devtunnels.ms/docs)](https://gqtvmpqv-8000.inc1.devtunnels.ms/)
 * PostgreSQL:  (database: `defect_tracking_db`)
 
 ---
