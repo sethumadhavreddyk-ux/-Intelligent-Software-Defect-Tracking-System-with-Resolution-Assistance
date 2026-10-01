@@ -80,8 +80,8 @@ cd defect-tracker
 
 
 The system will start on :
-* **Web UI:** [(https://gqtvmpqv-8000.inc1.devtunnels.ms/)](https://gqtvmpqv-8000.inc1.devtunnels.ms/)]
-* **Interactive Swagger API Docs:** ([https://gqtvmpqv-8000.inc1.devtunnels.ms/docs](https://gqtvmpqv-8000.inc1.devtunnels.ms/docs))
+* **Web UI:** ([(http://127.0.0.1:8000)].(http://127.0.0.1:8000))
+* **Interactive Swagger API Docs:** ([http://127.0.0.1:8000/docs].(http://127.0.0.1:8000/docs))
 
 ---
 
@@ -127,7 +127,7 @@ Run with PostgreSQL and pgvector using Docker Compose:
 ```bash
 docker-compose up --build
 ```
-* API & UI:[(https://gqtvmpqv-8000.inc1.devtunnels.ms/docs)](https://gqtvmpqv-8000.inc1.devtunnels.ms/)
+* API & UI:[(http://127.0.0.1:8000/docs)](http://127.0.0.1:8000)
 * PostgreSQL:  (database: `defect_tracking_db`)
 
 ---
