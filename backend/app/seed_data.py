@@ -560,7 +560,7 @@ A resolved defect CANNOT be moved to `Closed` directly by the developer who reso
                 "tags": "heic, canvas, dropzone, attachments, thumbnails",
                 "author": "Rajesh Kumar",
                 "summary": "Technical guide for handling camera RAW and Apple HEIC photo uploads in web browsers.",
-                "content": """# Browser Media Ingestion & Attachment Thumbnails
+                "content": r"""# Browser Media Ingestion & Attachment Thumbnails
 
 ## 1. Problem
 Modern iOS mobile devices capture bug report screenshots in HEIC container formats. Browsers cannot decode `.heic` directly inside standard `<img>` tags or 2D HTML5 canvas elements.
