@@ -58,8 +58,43 @@ def test_face_auth(client):
     assert response.status_code == 200
     assert "access_token" in response.json()
 
-def test_oauth_simulation(client):
+def test_oauth_requires_provider_configuration(client, monkeypatch):
+    from app.routers import auth as auth_router
+    monkeypatch.setattr(auth_router, "get_oauth_client", lambda provider: None)
+
     for provider in ["google", "microsoft", "github", "linkedin"]:
-        res = client.post(f"/api/v1/auth/oauth/{provider}")
-        assert res.status_code == 200
-        assert "access_token" in res.json()
+        response = client.get(f"/api/v1/auth/oauth/{provider}", follow_redirects=False)
+        assert response.status_code == 303
+        assert f"{provider}_not_configured" in response.headers["location"]
+        assert client.post(f"/api/v1/auth/oauth/{provider}").status_code == 405
+
+
+def test_oauth_callback_uses_verified_provider_identity(client, monkeypatch):
+    from app.routers import auth as auth_router
+
+    class FakeOAuthClient:
+        async def authorize_access_token(self, request):
+            return {
+                "userinfo": {
+                    "sub": "test-google-subject-2026",
+                    "email": "oauth-callback-user@example.com",
+                    "email_verified": True,
+                    "name": "OAuth Callback User"
+                }
+            }
+
+    monkeypatch.setattr(auth_router, "get_oauth_client", lambda provider: FakeOAuthClient())
+    response = client.get(
+        "/api/v1/auth/oauth/google/callback",
+        follow_redirects=False
+    )
+    assert response.status_code == 303
+    token = response.headers["location"].split("oauth_access_token=", 1)[1]
+
+    profile_response = client.get(
+        "/api/v1/auth/me",
+        headers={"Authorization": f"Bearer {token}"}
+    )
+    assert profile_response.status_code == 200
+    assert profile_response.json()["email"] == "oauth-callback-user@example.com"
+    assert profile_response.json()["role"] == "Developer"

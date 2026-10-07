@@ -4,6 +4,7 @@ from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+from starlette.middleware.sessions import SessionMiddleware
 
 from app.config import settings
 from app.database import engine, Base, SessionLocal
@@ -54,6 +55,13 @@ app = FastAPI(
 )
 
 # CORS Middleware
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=settings.SECRET_KEY,
+    max_age=600,
+    same_site="lax",
+    https_only=settings.SESSION_COOKIE_SECURE
+)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],

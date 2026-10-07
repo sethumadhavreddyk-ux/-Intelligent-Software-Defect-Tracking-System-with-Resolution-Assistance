@@ -5,7 +5,7 @@
 
 const API_BASE = window.location.origin.includes('localhost') || window.location.origin.includes('127.0.0.1')
   ? `${window.location.origin}/api/v1`
-  : 'http://localhost:8000/api/v1';
+  : 'https://intelligent-software-defect-tracking.onrender.com/api/v1';
 
 class ApiClient {
   constructor() {
@@ -112,12 +112,6 @@ class ApiClient {
     return this.request('/auth/face-auth', {
       method: 'POST',
       body: JSON.stringify({ email_or_username, face_detected: true, confidence })
-    });
-  }
-
-  async oauthLogin(provider) {
-    return this.request(`/auth/oauth/${provider}`, {
-      method: 'POST'
     });
   }
 
@@ -332,6 +326,20 @@ class ApiClient {
     return this.request('/integrations/slack/alert', {
       method: 'POST',
       body: JSON.stringify({ message, channel, defect_id })
+    });
+  }
+
+  async triggerTeamsAlert(message, channel = 'General', defect_id = null) {
+    return this.request('/integrations/teams/alert', {
+      method: 'POST',
+      body: JSON.stringify({ message, channel, defect_id })
+    });
+  }
+
+  async syncJiraIssue(jira_key, defect_id = null, sync_direction = 'TWO_WAY') {
+    return this.request('/integrations/jira/sync', {
+      method: 'POST',
+      body: JSON.stringify({ jira_key, defect_id, sync_direction })
     });
   }
 

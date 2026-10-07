@@ -67,6 +67,9 @@ def ingest_knowledge_document(
     Ingests a new knowledge document, executes automated text extraction, chunking,
     and indexes chunks into the vector store.
     """
+    if doc_in.chunk_overlap >= doc_in.chunk_size:
+        raise HTTPException(status_code=422, detail="Chunk overlap must be smaller than chunk size")
+
     new_doc = KnowledgeDocument(
         title=doc_in.title,
         category=doc_in.category,
@@ -81,7 +84,11 @@ def ingest_knowledge_document(
     db.refresh(new_doc)
 
     # Automated chunking pipeline
-    chunks = rag_service.chunk_document(doc_in.content, chunk_size=350, overlap=40)
+    chunks = rag_service.chunk_document(
+        doc_in.content,
+        chunk_size=doc_in.chunk_size,
+        overlap=doc_in.chunk_overlap
+    )
     for idx, chunk_text in enumerate(chunks):
         keywords = rag_service.extract_keywords(chunk_text)
         token_count = len(chunk_text.split())

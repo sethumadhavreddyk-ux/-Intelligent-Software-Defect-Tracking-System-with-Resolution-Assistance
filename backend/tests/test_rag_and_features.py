@@ -1,6 +1,7 @@
 import pytest
 from fastapi.testclient import TestClient
 from app.main import app
+from app.auth.security import create_access_token
 
 client = TestClient(app)
 
@@ -8,6 +9,10 @@ def get_auth_token(username="admin", password="Admin@123"):
     res = client.post("/api/v1/auth/login", json={"username_or_email": username, "password": password})
     assert res.status_code == 200, f"Failed to login: {res.text}"
     return res.json()["access_token"]
+
+def role_headers(username, role):
+    token = create_access_token(data={"sub": username, "role": role})
+    return {"Authorization": f"Bearer {token}"}
 
 def test_qr_authentication_cycle():
     # 1. Generate QR Code
@@ -73,6 +78,44 @@ def test_roles_matrix_and_role_assignment():
     assert res_revert.status_code == 200
     assert res_revert.json()["role"] == "Developer"
 
+def test_developers_cannot_assign_roles():
+    headers = role_headers("dev_alex", "Developer")
+    users = client.get("/api/v1/users", headers=headers).json()
+    target_user = next(user for user in users if user["username"] == "rajesh")
+
+    assign_response = client.patch(
+        f"/api/v1/users/{target_user['id']}/role",
+        headers=headers,
+        json={"role": "Admin"}
+    )
+    update_response = client.put(
+        f"/api/v1/users/{target_user['id']}",
+        headers=headers,
+        json={"role": "Admin"}
+    )
+
+    assert assign_response.status_code == 403
+    assert update_response.status_code == 403
+
+def test_project_managers_cannot_grant_admin_role():
+    headers = role_headers("pm_sarah", "Project Manager")
+    users = client.get("/api/v1/users", headers=headers).json()
+    target_user = next(user for user in users if user["username"] == "rajesh")
+
+    assign_response = client.patch(
+        f"/api/v1/users/{target_user['id']}/role",
+        headers=headers,
+        json={"role": "Admin"}
+    )
+    update_response = client.put(
+        f"/api/v1/users/{target_user['id']}",
+        headers=headers,
+        json={"role": "Admin"}
+    )
+
+    assert assign_response.status_code == 403
+    assert update_response.status_code == 403
+
 def test_rag_knowledge_pipeline():
     token = get_auth_token()
     headers = {"Authorization": f"Bearer {token}"}
@@ -82,7 +125,7 @@ def test_rag_knowledge_pipeline():
     assert res_stats.status_code == 200
     stats = res_stats.json()
     assert stats["total_documents"] >= 4
-    assert stats["total_chunks"] >= 8
+    assert stats["total_chunks"] >= stats["total_documents"]
 
     # 2. List documents
     res_docs = client.get("/api/v1/rag/documents", headers=headers)
@@ -127,6 +170,42 @@ def test_rag_knowledge_pipeline():
     query_data = res_query.json()
     assert len(query_data["answer"]) > 50
     assert query_data["confidence"] > 0.0
+
+def test_rag_directory_filters_chunking_and_delete():
+    token = get_auth_token()
+    headers = {"Authorization": f"Bearer {token}"}
+    content = " ".join(f"token{index}" for index in range(100))
+    payload = {
+        "title": "Chunk Settings Regression Document",
+        "category": "Database",
+        "doc_type": "text",
+        "content": content,
+        "chunk_size": 40,
+        "chunk_overlap": 5
+    }
+
+    ingest_response = client.post("/api/v1/rag/documents", headers=headers, json=payload)
+    assert ingest_response.status_code == 200
+    document = ingest_response.json()
+    chunks = document["chunks"]
+    assert [chunk["token_count"] for chunk in chunks] == [40, 40, 30]
+    assert chunks[0]["chunk_text"].split()[-5:] == chunks[1]["chunk_text"].split()[:5]
+
+    filtered_response = client.get(
+        "/api/v1/rag/documents",
+        headers=headers,
+        params={"category": "Database", "q": "Chunk Settings Regression"}
+    )
+    assert filtered_response.status_code == 200
+    assert [item["id"] for item in filtered_response.json()] == [document["id"]]
+
+    invalid_payload = {**payload, "title": "Invalid Chunk Settings", "chunk_overlap": 40}
+    invalid_response = client.post("/api/v1/rag/documents", headers=headers, json=invalid_payload)
+    assert invalid_response.status_code == 422
+
+    delete_response = client.delete(f"/api/v1/rag/documents/{document['id']}", headers=headers)
+    assert delete_response.status_code == 200
+    assert client.get(f"/api/v1/rag/documents/{document['id']}", headers=headers).status_code == 404
 
 def test_defect_attachments_endpoints():
     token = get_auth_token()

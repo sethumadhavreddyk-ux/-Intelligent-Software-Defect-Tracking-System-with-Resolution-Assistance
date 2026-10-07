@@ -18,7 +18,13 @@ class AuthController {
     this.qrPollingInterval = null;
     this.qrCountdownInterval = null;
     this.currentQRChallengeToken = null;
+    this.voiceRecognition = null;
+    this.voiceAssistantActive = false;
     this.initEventListeners();
+    this.initVoiceAssistant();
+    this.initVoiceHUD();
+    this.initOAuthModals();
+    this.completeOAuthRedirect();
   }
 
   initEventListeners() {
@@ -204,6 +210,15 @@ class AuthController {
       });
     }
 
+    // 10c. Voice Biometric Card Trigger Button
+    const voiceBtn = document.getElementById('btn-open-voice-auth');
+    if (voiceBtn) {
+      voiceBtn.addEventListener('click', () => {
+        this.switchAuthCard('card-voice-auth');
+        this.startVoiceAssistant();
+      });
+    }
+
     // 11. Forgot Password Form Submit
     const forgotForm = document.getElementById('forgot-password-form');
     if (forgotForm) {
@@ -313,6 +328,11 @@ class AuthController {
     // If leaving QR auth, stop QR polling & timer
     if (targetCardId !== 'card-qr-auth') {
       this.stopQRScanner();
+    }
+
+    // If leaving voice auth, stop voice assistant
+    if (targetCardId !== 'card-voice-auth' && targetCardId !== 'card-welcome-back') {
+      this.stopVoiceAssistant();
     }
   }
 
@@ -675,31 +695,306 @@ class AuthController {
     }
   }
 
-  // --- Realistic Social OAuth Modals (Google, Microsoft, GitHub, LinkedIn) ---
-  openOAuthModal(provider) {
-    const modal = document.getElementById(`modal-${provider}-oauth`);
-    if (modal) {
-      modal.showModal();
-    } else {
-      this.executeOAuthLogin(provider);
+  initVoiceAssistant() {
+    const micBtn = document.getElementById('btn-voice-assistant');
+    const simBtn = document.getElementById('btn-simulate-voice-unlock');
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (simBtn) {
+      simBtn.addEventListener('click', () => {
+        this.simulateVoiceUnlock('unlock bugflow');
+      });
     }
+
+    if (!micBtn) return;
+
+    if (!SpeechRecognition) {
+      const status = document.getElementById('voice-assistant-status');
+      if (status) {
+        status.innerHTML = 'Voice API not supported in browser. Use <strong>⚡ Fast Voice Unlock</strong> or sign-in buttons.';
+      }
+      micBtn.addEventListener('click', () => {
+        this.simulateVoiceUnlock('unlock bugflow');
+      });
+      return;
+    }
+
+    try {
+      this.voiceRecognition = new SpeechRecognition();
+      this.voiceRecognition.lang = navigator.language || 'en-US';
+      this.voiceRecognition.continuous = false;
+      this.voiceRecognition.interimResults = true;
+      this.voiceRecognition.maxAlternatives = 1;
+
+      micBtn.addEventListener('click', () => {
+        if (this.voiceAssistantActive) {
+          this.stopVoiceAssistant();
+        } else {
+          this.startVoiceAssistant();
+        }
+      });
+
+      this.voiceRecognition.onstart = () => {
+        this.setVoiceAssistantVisualState(true, 'Listening... Speak your command or passphrase');
+      };
+
+      this.voiceRecognition.onresult = (event) => {
+        let transcript = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          transcript += event.results[i][0].transcript;
+        }
+        transcript = transcript.trim();
+        const statusEl = document.getElementById('voice-assistant-status');
+        const hudTranscript = document.getElementById('voice-hud-transcript-bubble');
+        if (statusEl) statusEl.innerHTML = `Heard: "<strong>${transcript}</strong>"`;
+        if (hudTranscript) hudTranscript.textContent = `"${transcript}"`;
+
+        if (event.results[0].isFinal) {
+          this.handleVoiceCommand(transcript);
+        }
+      };
+
+      this.voiceRecognition.onerror = (event) => {
+        console.warn('[VOICE] Speech recognition error:', event.error);
+        const msg = event.error === 'not-allowed'
+          ? 'Microphone permission denied. Use Fast Voice Unlock.'
+          : 'Voice not detected. Click mic to try again.';
+        this.setVoiceAssistantVisualState(false, msg);
+      };
+
+      this.voiceRecognition.onend = () => {
+        if (this.voiceAssistantActive) {
+          this.setVoiceAssistantVisualState(false, 'Voice Assistant Ready');
+        }
+      };
+    } catch (err) {
+      console.warn('[VOICE] Initialization failed:', err);
+    }
+  }
+
+  startVoiceAssistant() {
+    if (!this.voiceRecognition) {
+      this.simulateVoiceUnlock('unlock bugflow');
+      return;
+    }
+    try {
+      this.voiceRecognition.start();
+    } catch (e) {
+      this.stopVoiceAssistant();
+      try { this.voiceRecognition.start(); } catch(err) {
+        this.simulateVoiceUnlock('unlock bugflow');
+      }
+    }
+  }
+
+  stopVoiceAssistant() {
+    this.voiceAssistantActive = false;
+    if (this.voiceRecognition) {
+      try { this.voiceRecognition.stop(); } catch(e) {}
+    }
+    this.setVoiceAssistantVisualState(false, 'Voice Assistant Ready');
+  }
+
+  setVoiceAssistantVisualState(isListening, message) {
+    this.voiceAssistantActive = isListening;
+    
+    // Front station elements
+    const micBtn = document.getElementById('btn-voice-assistant');
+    const eqBars = document.getElementById('voice-equalizer-bars');
+    const statusPill = document.getElementById('voice-station-status-pill');
+    const statusText = document.getElementById('voice-assistant-status');
+
+    if (micBtn) {
+      if (isListening) micBtn.classList.add('active');
+      else micBtn.classList.remove('active');
+    }
+
+    if (eqBars) {
+      if (isListening) eqBars.classList.add('active');
+      else eqBars.classList.remove('active');
+    }
+
+    if (statusPill) {
+      if (isListening) {
+        statusPill.textContent = 'Listening...';
+        statusPill.classList.add('listening');
+        statusPill.classList.remove('verified');
+      } else {
+        statusPill.textContent = 'Ready • Tap mic';
+        statusPill.classList.remove('listening');
+      }
+    }
+
+    if (statusText && message) {
+      statusText.innerHTML = message;
+    }
+
+    // Voice HUD Card elements
+    const hudStatus = document.getElementById('voice-hud-status-text');
+    const hudBars = document.getElementById('voice-hud-bars');
+    if (hudStatus && message) hudStatus.textContent = message;
+    if (hudBars) {
+      if (isListening) hudBars.classList.add('active');
+      else hudBars.classList.remove('active');
+    }
+  }
+
+  speakVoiceFeedback(text) {
+    if ('speechSynthesis' in window) {
+      try {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 1.05;
+        utterance.pitch = 1.0;
+        window.speechSynthesis.speak(utterance);
+      } catch (e) {}
+    }
+  }
+
+  async simulateVoiceUnlock(command = 'unlock bugflow') {
+    this.setVoiceAssistantVisualState(true, `Simulating Voice Command: "${command}"...`);
+    const statusEl = document.getElementById('voice-assistant-status');
+    const hudTranscript = document.getElementById('voice-hud-transcript-bubble');
+    if (statusEl) statusEl.innerHTML = `Heard: "<strong>${command}</strong>"`;
+    if (hudTranscript) hudTranscript.textContent = `"${command}"`;
+
+    await new Promise(r => setTimeout(r, 650));
+    await this.handleVoiceCommand(command);
+  }
+
+  async handleVoiceCommand(transcript) {
+    const raw = transcript.toLowerCase().trim();
+    const command = raw.replace(/linked[\s-]*in/g, 'linkedin');
+
+    // 1. Social OAuth Commands
+    const providers = ['google', 'microsoft', 'github', 'linkedin'];
+    const matchedProvider = providers.find(p => command.includes(p));
+    if (matchedProvider) {
+      this.setVoiceAssistantVisualState(false, `Opening ${matchedProvider.toUpperCase()} sign-in...`);
+      this.speakVoiceFeedback(`Opening ${matchedProvider} sign in dialog.`);
+      this.openOAuthModal(matchedProvider);
+      return;
+    }
+
+    // 2. Face Biometric Command
+    if (/\b(face|camera|look)\b/.test(command)) {
+      this.setVoiceAssistantVisualState(false, 'Opening Face Biometric...');
+      this.speakVoiceFeedback('Switching to face recognition.');
+      this.switchAuthCard('card-face-auth');
+      this.startFaceScanner();
+      return;
+    }
+
+    // 3. QR Code Command
+    if (/\b(qr|mobile|phone|code)\b/.test(command)) {
+      this.setVoiceAssistantVisualState(false, 'Opening QR code authentication...');
+      this.speakVoiceFeedback('Displaying instant QR login.');
+      this.switchAuthCard('card-qr-auth');
+      this.startQRScanner();
+      return;
+    }
+
+    // 4. OTP / Email tab navigation
+    if (/\botp\b/.test(command)) {
+      document.querySelector('.auth-pill-tab[data-tab="otp"]')?.click();
+      this.setVoiceAssistantVisualState(false, 'Switched to OTP Login.');
+      return;
+    }
+
+    if (/\b(email|password)\b/.test(command)) {
+      document.querySelector('.auth-pill-tab[data-tab="email"]')?.click();
+      this.setVoiceAssistantVisualState(false, 'Switched to Email Login.');
+      return;
+    }
+
+    if (/\b(unlock|open|login|authenticate|enter|start|let me in|sesame|bugflow)\b/.test(command)) {
+      this.setVoiceAssistantVisualState(false, 'Sign-in options are ready. Choose a provider or enter your account details.');
+      this.speakVoiceFeedback('Sign-in options are ready. Choose a provider or enter your account details.');
+      this.switchAuthCard('card-welcome-back');
+      document.getElementById('login-username')?.focus();
+      return;
+    }
+
+    this.setVoiceAssistantVisualState(false, 'Command not recognized. Say unlock, name a provider, or choose a sign-in option.');
+    this.speakVoiceFeedback('Command not recognized. Please try again.');
+  }
+
+  initVoiceHUD() {
+    const hudToggle = document.getElementById('btn-voice-hud-toggle');
+    const hudMic = document.getElementById('voice-hud-mic-trigger');
+    const hudSim = document.getElementById('btn-voice-hud-fast-unlock');
+
+    const toggleFn = () => {
+      if (this.voiceAssistantActive) {
+        this.stopVoiceAssistant();
+        if (hudToggle) hudToggle.textContent = '🎙️ Listen Now';
+      } else {
+        this.startVoiceAssistant();
+        if (hudToggle) hudToggle.textContent = '⏹️ Stop Listening';
+      }
+    };
+
+    if (hudToggle) hudToggle.addEventListener('click', toggleFn);
+    if (hudMic) hudMic.addEventListener('click', toggleFn);
+    if (hudSim) {
+      hudSim.addEventListener('click', () => {
+        this.simulateVoiceUnlock('unlock bugflow');
+      });
+    }
+
+    // Command chips inside Voice HUD
+    document.querySelectorAll('.voice-cmd-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const cmd = chip.dataset.cmd;
+        this.simulateVoiceUnlock(cmd);
+      });
+    });
+  }
+
+  initOAuthModals() {}
+
+  openOAuthModal(provider) {
+    const allowedProviders = ['google', 'microsoft', 'github', 'linkedin'];
+    if (!allowedProviders.includes(provider)) return;
+    window.location.assign(`${API_BASE}/auth/oauth/${provider}`);
   }
 
   async executeOAuthLogin(provider) {
-    window.showToast(`Authenticating with ${provider.toUpperCase()}...`, 'info');
+    this.openOAuthModal(provider);
+  }
+
+  async completeOAuthRedirect() {
+    const fragment = new URLSearchParams(window.location.hash.slice(1));
+    const accessToken = fragment.get('oauth_access_token');
+    const failure = new URLSearchParams(window.location.search).get('oauth_error');
+    if (!accessToken && !failure) return;
+
+    const cleanUrl = new URL(window.location.href);
+    cleanUrl.hash = '';
+    cleanUrl.searchParams.delete('oauth_error');
+    window.history.replaceState({}, document.title, cleanUrl.pathname + cleanUrl.search);
+
+    if (failure) {
+      const message = failure.endsWith('_not_configured')
+        ? 'This provider is not configured yet. Add its OAuth client ID and secret to the backend environment.'
+        : `Provider sign-in could not be completed (${failure.replace(/_/g, ' ')}).`;
+      window.showToast(message, 'warning');
+      return;
+    }
+
     try {
-      const data = await api.oauthLogin(provider);
-      api.setSession(data.access_token, data.user);
-
-      // Close open dialogs
-      const openDialog = document.querySelector('dialog[open]');
-      if (openDialog) openDialog.close();
-
-      this.onLoginSuccess(data.user);
+      const response = await fetch(`${API_BASE}/auth/me`, {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      });
+      if (!response.ok) throw new Error('Provider session could not be verified');
+      const user = await response.json();
+      api.setSession(accessToken, user);
+      this.onLoginSuccess(user);
     } catch (err) {
-      window.showToast(err.message || 'OAuth authentication failed', 'danger');
+      window.showToast(err.message || 'Provider sign-in failed', 'danger');
     }
   }
+
 }
 
 window.authController = new AuthController();

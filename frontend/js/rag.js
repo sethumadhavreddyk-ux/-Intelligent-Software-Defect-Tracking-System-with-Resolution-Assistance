@@ -7,6 +7,7 @@ class RAGController {
   constructor() {
     this.currentTab = 'search';
     this.selectedDoc = null;
+    this.directoryFilterTimer = null;
     this.initEventListeners();
   }
 
@@ -98,6 +99,18 @@ class RAGController {
         }
       });
     });
+
+    const documentFilter = document.getElementById('rag-doc-filter-input');
+    const categoryFilter = document.getElementById('rag-doc-cat-filter');
+    if (documentFilter) {
+      documentFilter.addEventListener('input', () => {
+        clearTimeout(this.directoryFilterTimer);
+        this.directoryFilterTimer = setTimeout(() => this.loadKnowledgeDirectory(), 250);
+      });
+    }
+    if (categoryFilter) {
+      categoryFilter.addEventListener('change', () => this.loadKnowledgeDirectory());
+    }
   }
 
   switchTab(tabName) {
@@ -325,9 +338,15 @@ class RAGController {
     const docType = document.getElementById('rag-ingest-type').value;
     const tags = document.getElementById('rag-ingest-tags').value.trim();
     const content = document.getElementById('rag-ingest-content').value.trim();
+    const chunkSize = Number(document.getElementById('rag-ingest-chunk-size').value);
+    const chunkOverlap = Number(document.getElementById('rag-ingest-overlap').value);
 
     if (!title || !content) {
       window.showToast('Please provide both document title and text content', 'warning');
+      return;
+    }
+    if (!Number.isInteger(chunkSize) || !Number.isInteger(chunkOverlap) || chunkOverlap >= chunkSize) {
+      window.showToast('Chunk overlap must be a whole number smaller than the chunk size', 'warning');
       return;
     }
 
@@ -343,7 +362,9 @@ class RAGController {
         category,
         doc_type: docType,
         tags,
-        content
+        content,
+        chunk_size: chunkSize,
+        chunk_overlap: chunkOverlap
       });
 
       window.showToast(`Document ingested into vector store! Generated ${doc.chunks?.length || 0} chunks.`, 'success');
@@ -364,82 +385,83 @@ class RAGController {
   }
 
   async loadKnowledgeDirectory() {
-    const container = document.getElementById('rag-directory-grid');
+    const container = document.getElementById('rag-directory-table-body');
     if (!container) return;
 
     container.innerHTML = `
-      <div style="text-align: center; padding: 40px; color: var(--text-muted); grid-column: 1 / -1;">
-        <div class="spinner" style="width: 32px; height: 32px; margin: 0 auto 12px;"></div>
-        <div>Loading knowledge documents...</div>
-      </div>
+      <tr><td colspan="8" style="text-align: center; padding: 24px; color: var(--text-muted);">Loading knowledge documents...</td></tr>
     `;
 
     try {
-      const docs = await api.getRAGDocuments();
+      const category = document.getElementById('rag-doc-cat-filter')?.value || null;
+      const query = document.getElementById('rag-doc-filter-input')?.value.trim() || null;
+      const docs = await api.getRAGDocuments(category, query);
       if (!docs || docs.length === 0) {
         container.innerHTML = `
-          <div class="glass-card" style="padding: 32px; text-align: center; color: var(--text-muted); grid-column: 1 / -1;">
-            <div style="font-size: 2rem; margin-bottom: 8px;">📚</div>
-            <strong>Knowledge Base is currently empty</strong>
-            <p style="font-size: 0.85rem; margin-top: 4px;">Ingest architectural or incident documents to seed the RAG vector store.</p>
-          </div>
+          <tr><td colspan="8" style="text-align: center; padding: 24px; color: var(--text-muted);">No knowledge documents match these filters.</td></tr>
         `;
         return;
       }
 
       container.innerHTML = docs.map(doc => `
-        <div class="glass-card" style="padding: 20px; display: flex; flex-direction: column; justify-content: space-between; border-top: 3px solid var(--accent-primary);">
-          <div>
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
-              <span class="badge" style="background: rgba(99,102,241,0.2); font-size: 0.72rem;">${doc.category}</span>
-              <span class="badge" style="background: rgba(56,189,248,0.15); color: #38bdf8; font-size: 0.72rem;">${doc.chunks?.length || 0} Chunks</span>
-            </div>
-            <h4 style="font-size: 1.05rem; font-weight: 700; color: #f8fafc; margin-bottom: 8px;">${doc.title}</h4>
-            <p style="font-size: 0.82rem; color: var(--text-secondary); line-height: 1.45; margin-bottom: 14px;">
-              ${doc.summary || (doc.content.slice(0, 140) + '...')}
-            </p>
-            ${doc.tags ? `
-              <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 14px;">
-                ${doc.tags.split(',').map(t => `<span class="badge" style="background: rgba(255,255,255,0.06); font-size: 0.7rem;">#${t.trim()}</span>`).join('')}
-              </div>
-            ` : ''}
-          </div>
-
-          <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 12px; margin-top: 8px;">
-            <div style="font-size: 0.74rem; color: var(--text-muted);">
-              Author: <strong>${doc.author}</strong>
-            </div>
-            <button class="btn-secondary" style="font-size: 0.76rem; padding: 4px 10px;" onclick="ragController.viewDocumentModal(${doc.id})">
-              Inspect Chunks &rarr;
-            </button>
-          </div>
-        </div>
+        <tr>
+          <td>${doc.id}</td>
+          <td><strong>${this.escapeHTML(doc.title)}</strong><div style="font-size: 0.76rem; color: var(--text-muted);">${this.escapeHTML(doc.author || '')}</div></td>
+          <td>${this.escapeHTML(doc.category)}</td>
+          <td>${this.escapeHTML(doc.doc_type)}</td>
+          <td>${doc.chunks?.length || 0}</td>
+          <td>${(doc.content || '').length.toLocaleString()} chars</td>
+          <td>${doc.created_at ? new Date(doc.created_at).toLocaleDateString() : '—'}</td>
+          <td style="white-space: nowrap;">
+            <button type="button" class="btn-secondary" onclick="ragController.viewDocumentModal(${doc.id})">Inspect</button>
+            <button type="button" class="btn-secondary" style="color: var(--accent-danger);" onclick="ragController.deleteDocument(${doc.id})">Delete</button>
+          </td>
+        </tr>
       `).join('');
     } catch (err) {
-      container.innerHTML = `<div style="color: #f87171; grid-column: 1 / -1;">Failed to load documents: ${err.message}</div>`;
+      container.innerHTML = `<tr><td colspan="8" style="color: #f87171; padding: 24px;">Failed to load documents: ${this.escapeHTML(err.message)}</td></tr>`;
+    }
+  }
+
+  escapeHTML(value) {
+    return String(value ?? '').replace(/[&<>"']/g, character => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    })[character]);
+  }
+
+  async deleteDocument(docId) {
+    if (!window.confirm('Delete this knowledge document and its chunks?')) return;
+    try {
+      await api.deleteRAGDocument(docId);
+      window.showToast('Knowledge document deleted', 'success');
+      await Promise.all([this.loadKnowledgeDirectory(), this.loadStats()]);
+    } catch (err) {
+      window.showToast(`Failed to delete document: ${err.message}`, 'danger');
     }
   }
 
   async viewDocumentModal(docId) {
-    const dialog = document.getElementById('rag-doc-dialog');
+    const dialog = document.getElementById('rag-chunk-inspector-dialog');
     if (!dialog) return;
 
     try {
       const doc = await api.getRAGDocument(docId);
-      document.getElementById('rag-modal-doc-title').textContent = doc.title;
-      document.getElementById('rag-modal-doc-category').textContent = doc.category;
-      document.getElementById('rag-modal-doc-chunks-count').textContent = `${doc.chunks?.length || 0} Chunks`;
-      document.getElementById('rag-modal-doc-content').textContent = doc.content;
+      document.getElementById('rag-inspector-doc-title').textContent = doc.title;
+      document.getElementById('rag-inspector-doc-meta').textContent = `${doc.category} · ${doc.doc_type} · ${doc.chunks?.length || 0} chunks`;
 
-      const chunksContainer = document.getElementById('rag-modal-chunks-list');
+      const chunksContainer = document.getElementById('rag-inspector-chunks-container');
       if (chunksContainer) {
         chunksContainer.innerHTML = (doc.chunks || []).map(ch => `
           <div style="background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px; margin-bottom: 10px;">
             <div style="display: flex; justify-content: space-between; font-size: 0.74rem; color: var(--text-muted); margin-bottom: 4px;">
-              <strong>Chunk #${ch.chunk_index}</strong>
-              <span>${ch.token_count} words &bull; Keywords: ${ch.keywords || 'none'}</span>
+              <strong>Chunk #${this.escapeHTML(ch.chunk_index)}</strong>
+              <span>${ch.token_count} words &bull; Keywords: ${this.escapeHTML(ch.keywords || 'none')}</span>
             </div>
-            <div style="font-size: 0.8rem; font-family: var(--font-mono); color: #cbd5e1; white-space: pre-line;">${ch.chunk_text}</div>
+            <div style="font-size: 0.8rem; font-family: var(--font-mono); color: #cbd5e1; white-space: pre-line;">${this.escapeHTML(ch.chunk_text)}</div>
           </div>
         `).join('');
       }
@@ -451,7 +473,7 @@ class RAGController {
   }
 
   async loadHistoricalResolutions() {
-    const container = document.getElementById('rag-history-list');
+    const container = document.getElementById('rag-historical-resolutions-grid');
     if (!container) return;
 
     container.innerHTML = `
@@ -462,7 +484,7 @@ class RAGController {
 
     try {
       const items = await api.getHistoricalResolutions();
-      container.innerHTML = items.map(item => `
+      container.innerHTML = items.length ? items.map(item => `
         <div class="glass-card" style="padding: 18px; margin-bottom: 12px; border-left: 3px solid #10b981;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
             <div style="display: flex; align-items: center; gap: 8px;">
@@ -478,7 +500,7 @@ class RAGController {
             ${item.resolution_text}
           </div>
         </div>
-      `).join('');
+      `).join('') : '<div style="color: var(--text-muted);">No historical resolutions are available.</div>';
     } catch (err) {
       container.innerHTML = `<div style="color: #f87171;">Failed to load historical resolutions: ${err.message}</div>`;
     }

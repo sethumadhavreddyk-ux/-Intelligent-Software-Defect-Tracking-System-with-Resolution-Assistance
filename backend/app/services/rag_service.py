@@ -10,36 +10,20 @@ from app.services.ai_service import ai_service
 class RAGService:
     def __init__(self):
         self.embedding_dimension = 384
-        self.total_queries_served = 142
 
     def chunk_document(self, text: str, chunk_size: int = 350, overlap: int = 40) -> List[str]:
         """
-        Splits markdown or text documents into semantic paragraphs or chunks with sliding overlap.
+        Splits text into word-count chunks with a sliding overlap.
         """
-        paragraphs = [p.strip() for p in text.split("\n\n") if p.strip()]
-        chunks = []
-        current_chunk = ""
+        words = text.split()
+        if not words:
+            return []
 
-        for p in paragraphs:
-            if len(current_chunk) + len(p) <= chunk_size:
-                current_chunk += ("\n\n" + p if current_chunk else p)
-            else:
-                if current_chunk:
-                    chunks.append(current_chunk)
-                current_chunk = p
-
-        if current_chunk:
-            chunks.append(current_chunk)
-
-        # Fallback if document is a single huge block
-        if not chunks and text.strip():
-            words = text.split()
-            for i in range(0, len(words), chunk_size - overlap):
-                chunk = " ".join(words[i:i + chunk_size])
-                if chunk:
-                    chunks.append(chunk)
-
-        return chunks or [text.strip()]
+        step = max(1, chunk_size - overlap)
+        return [
+            " ".join(words[start:start + chunk_size])
+            for start in range(0, len(words), step)
+        ]
 
     def extract_keywords(self, text: str, top_n: int = 6) -> str:
         words = re.findall(r'\b[a-zA-Z]{3,}\b', text.lower())
@@ -138,7 +122,6 @@ class RAGService:
         Executes end-to-end RAG retrieval and synthesis:
         User Query -> Semantic Search -> Relevant Context Assembled -> Gemini Synthesis
         """
-        self.total_queries_served += 1
         top_matches = self.search_knowledge(query=query, db=db, top_k=4, threshold=0.10)
 
         context_texts = []
@@ -223,7 +206,7 @@ Format your answer with clear markdown headings, bullet points, and code snippet
     def get_stats(self, db: Session) -> Dict[str, Any]:
         doc_count = db.query(KnowledgeDocument).count()
         chunk_count = db.query(KnowledgeChunk).count()
-        queries_count = db.query(RAGQueryLog).count() + self.total_queries_served
+        queries_count = db.query(RAGQueryLog).count()
 
         return {
             "total_documents": doc_count,

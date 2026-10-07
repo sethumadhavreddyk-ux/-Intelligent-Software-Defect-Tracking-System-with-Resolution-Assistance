@@ -1,73 +1,68 @@
-import urllib.request
-import json
+import os
+import sys
 
-def test_api():
-    base_url = "http://localhost:8000/api/v1"
-    
-    # 1. Login
-    login_data = json.dumps({"username": "madhav", "password": "Dev@123"}).encode('utf-8')
-    req = urllib.request.Request(f"{base_url}/auth/login", data=login_data, headers={"Content-Type": "application/json"})
-    with urllib.request.urlopen(req) as resp:
-        login_res = json.loads(resp.read().decode('utf-8'))
-        token = login_res["access_token"]
-        user = login_res["user"]
-        print(f"✅ 1. Auth Login: Success for '{user['full_name']}' ({user['role']})")
-    
-    auth_headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
-    
-    # 2. Defects List
-    req = urllib.request.Request(f"{base_url}/defects", headers=auth_headers)
-    with urllib.request.urlopen(req) as resp:
-        defects = json.loads(resp.read().decode('utf-8'))
-        print(f"✅ 2. Defects List: Retrieved {len(defects)} defects. Sample: '{defects[0]['defect_code']} - {defects[0]['title']}'")
-    
-    # 3. Analytics Dashboard
-    req = urllib.request.Request(f"{base_url}/analytics/dashboard", headers=auth_headers)
-    with urllib.request.urlopen(req) as resp:
-        analytics = json.loads(resp.read().decode('utf-8'))
-        print(f"✅ 3. Analytics KPI: Total={analytics.get('total_defects')}, Open={analytics.get('open_defects')}, Critical={analytics.get('critical_defects')}, Sprint Health={analytics.get('sprint_health', {}).get('score')}%")
-    
-    # 4. Intelligence - Root Cause Analysis
-    rca_payload = json.dumps({"defect_id": defects[0]["id"]}).encode('utf-8')
-    req = urllib.request.Request(f"{base_url}/intelligence/rca", data=rca_payload, headers=auth_headers)
-    with urllib.request.urlopen(req) as resp:
-        rca = json.loads(resp.read().decode('utf-8'))
-        print(f"✅ 4. AI RCA Synthesis: Confidence={rca.get('confidence')}%, Category='{rca.get('root_cause_category')}'")
+import pytest
+from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 
-    # 5. Intelligence - Similar Defects
-    sim_payload = json.dumps({"title": defects[0]["title"], "description": defects[0]["description"]}).encode('utf-8')
-    req = urllib.request.Request(f"{base_url}/intelligence/similarity", data=sim_payload, headers=auth_headers)
-    with urllib.request.urlopen(req) as resp:
-        sim = json.loads(resp.read().decode('utf-8'))
-        print(f"✅ 5. Vector Similarity: Found {len(sim)} matching historical defects")
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "backend"))
 
-    # 6. Forgot Password & OTP
-    fp_payload = json.dumps({"email": "madhav@bugflow.io"}).encode('utf-8')
-    req = urllib.request.Request(f"{base_url}/auth/forgot-password", data=fp_payload, headers={"Content-Type": "application/json"})
-    with urllib.request.urlopen(req) as resp:
-        fp_res = json.loads(resp.read().decode('utf-8'))
-        otp = fp_res.get("otp_code")
-        print(f"✅ 6. Forgot Password & OTP Dispatch: OTP={otp}")
-    
-    # 7. Verify OTP
-    v_payload = json.dumps({"email": "madhav@bugflow.io", "otp_code": otp}).encode('utf-8')
-    req = urllib.request.Request(f"{base_url}/auth/verify-otp", data=v_payload, headers={"Content-Type": "application/json"})
-    with urllib.request.urlopen(req) as resp:
-        v_res = json.loads(resp.read().decode('utf-8'))
-        print(f"✅ 7. Verify OTP: Success={v_res.get('verified')}")
+from app.database import Base, get_db
+from app.main import app
+from app.seed_data import seed_database
 
-    # 8. Sprints & Teams
-    req = urllib.request.Request(f"{base_url}/sprints", headers=auth_headers)
-    with urllib.request.urlopen(req) as resp:
-        sprints = json.loads(resp.read().decode('utf-8'))
-        print(f"✅ 8. Sprints: {len(sprints)} sprints retrieved. Active: '{sprints[0]['name']}'")
 
-    req = urllib.request.Request(f"{base_url}/teams", headers=auth_headers)
-    with urllib.request.urlopen(req) as resp:
-        teams = json.loads(resp.read().decode('utf-8'))
-        print(f"✅ 9. Teams: {len(teams)} teams retrieved.")
+@pytest.fixture
+def client():
+    engine = create_engine(
+        "sqlite://",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool
+    )
+    session_factory = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    Base.metadata.create_all(bind=engine)
 
-    print("\n🎉 ALL CORE BACKEND SERVICES & APIS OPERATING FLAWLESSLY!")
+    db = session_factory()
+    seed_database(db)
+    db.close()
 
-if __name__ == "__main__":
-    test_api()
+    def override_get_db():
+        session = session_factory()
+        try:
+            yield session
+        finally:
+            session.close()
+
+    previous_override = app.dependency_overrides.get(get_db)
+    app.dependency_overrides[get_db] = override_get_db
+    try:
+        with TestClient(app) as test_client:
+            yield test_client
+    finally:
+        if previous_override:
+            app.dependency_overrides[get_db] = previous_override
+        else:
+            app.dependency_overrides.pop(get_db, None)
+        Base.metadata.drop_all(bind=engine)
+        engine.dispose()
+
+
+def test_api(client):
+    login_response = client.post(
+        "/api/v1/auth/login",
+        json={"username": "madhav", "password": "Dev@123"}
+    )
+    assert login_response.status_code == 200
+    token = login_response.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    assert client.get("/api/v1/defects", headers=headers).status_code == 200
+    assert client.get("/api/v1/analytics/dashboard", headers=headers).status_code == 200
+    assert client.get("/api/v1/rag/stats", headers=headers).status_code == 200
+
+    openapi = client.get("/openapi.json").json()
+    assert "/api/v1/users/{user_id}/role" in openapi["paths"]
+    assert "/api/v1/rag/documents/{document_id}" in openapi["paths"]
+    assert "/api/v1/auth/oauth/{provider}/callback" in openapi["paths"]

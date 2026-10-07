@@ -67,9 +67,6 @@ def update_user(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    if current_user.role != UserRole.ADMIN and current_user.id != user_id:
-        raise HTTPException(status_code=403, detail="Not authorized to edit this user")
-
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -78,11 +75,15 @@ def update_user(
         user.full_name = user_update.full_name
     if user_update.email is not None:
         user.email = user_update.email
-    if user_update.role is not None and current_user.role == UserRole.ADMIN:
+    if user_update.role is not None:
+        if current_user.role not in [UserRole.ADMIN, UserRole.PROJECT_MANAGER]:
+            raise HTTPException(status_code=403, detail="Only Admins and Project Managers can assign roles")
+        if user_update.role == UserRole.ADMIN and current_user.role != UserRole.ADMIN:
+            raise HTTPException(status_code=403, detail="Only Admins can grant the Admin role")
         user.role = user_update.role
     if user_update.avatar_url is not None:
         user.avatar_url = user_update.avatar_url
-    if user_update.is_active is not None and current_user.role == UserRole.ADMIN:
+    if user_update.is_active is not None:
         user.is_active = user_update.is_active
 
     db.commit()
@@ -182,17 +183,17 @@ def assign_user_role(
     user_id: int,
     role_in: RoleAssignRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_pm_or_admin)
 ):
     """
     Assign a new role to any user (Admin or Project Manager authorization).
     """
-    if current_user.role not in [UserRole.ADMIN, UserRole.PROJECT_MANAGER]:
-        raise HTTPException(status_code=403, detail="Only Admins or Project Managers can assign user roles")
-
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+
+    if role_in.role == UserRole.ADMIN and current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Only Admins can grant the Admin role")
 
     old_role = user.role.value
     user.role = role_in.role

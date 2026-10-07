@@ -154,3 +154,58 @@ def sync_github_pr(
         "pr_url": defect.github_pr_url,
         "commit_hash": defect.github_commit_hash
     }
+
+def dispatch_teams_alert(
+    db: Session,
+    message: str,
+    channel: str = "General",
+    defect_key: Optional[str] = None
+) -> Dict[str, Any]:
+    """Sends or logs an adaptive card alert for Microsoft Teams."""
+    payload = {
+        "channel": channel,
+        "text": message,
+        "timestamp": datetime.datetime.utcnow().isoformat(),
+        "defect_key": defect_key,
+        "adaptive_card": True
+    }
+    log = IntegrationLog(
+        provider="MS Teams",
+        event_type="ALERT_DISPATCHED",
+        payload=json.dumps(payload),
+        status="DELIVERED",
+        created_at=datetime.datetime.utcnow()
+    )
+    db.add(log)
+    db.commit()
+    return {"status": "DELIVERED", "channel": channel, "message": message}
+
+def sync_jira_issue(
+    db: Session,
+    jira_key: str,
+    defect_id: Optional[int] = None,
+    sync_direction: str = "TWO_WAY"
+) -> Dict[str, Any]:
+    """Simulates 2-way sync with Atlassian Jira and records in audit logs."""
+    defect = None
+    if defect_id:
+        defect = db.query(Defect).filter(Defect.id == defect_id).first()
+
+    payload = {
+        "jira_key": jira_key,
+        "defect_key": defect.key if defect else "N/A",
+        "direction": sync_direction,
+        "timestamp": datetime.datetime.utcnow().isoformat(),
+        "synced_fields": ["status", "priority", "assignee", "comments"]
+    }
+    log = IntegrationLog(
+        provider="Jira",
+        event_type="BACKLOG_SYNC",
+        payload=json.dumps(payload),
+        status="SYNCHRONIZED",
+        created_at=datetime.datetime.utcnow()
+    )
+    db.add(log)
+    db.commit()
+    return {"status": "SYNCHRONIZED", "jira_key": jira_key, "synced_defect": defect.key if defect else None}
+

@@ -127,8 +127,100 @@ class ApiDocsController {
   }
 
   loadApiDocs() {
-    this.renderSidebar();
-    this.selectEndpoint(this.selectedEndpoint.id);
+    this.loadOpenApiSchema();
+  }
+
+  async loadOpenApiSchema() {
+    const listEl = document.getElementById('api-endpoints-nav');
+    if (listEl) listEl.textContent = 'Loading API operations...';
+
+    try {
+      const response = await fetch('/openapi.json');
+      if (!response.ok) throw new Error(`OpenAPI request failed (${response.status})`);
+      const spec = await response.json();
+      const prefix = new URL(API_BASE).pathname.replace(/\/$/, '');
+      this.endpoints = [];
+
+      Object.entries(spec.paths || {}).forEach(([path, pathItem]) => {
+        const inheritedParams = pathItem.parameters || [];
+        ['get', 'post', 'put', 'patch', 'delete', 'options', 'head'].forEach(method => {
+          const operation = pathItem[method];
+          if (!operation) return;
+
+          const parameters = new Map();
+          [...inheritedParams, ...(operation.parameters || [])].forEach(parameter => {
+            parameters.set(`${parameter.in}:${parameter.name}`, parameter);
+          });
+
+          const requestContent = operation.requestBody?.content || {};
+          const mediaType = requestContent['application/json'] ? 'application/json' : Object.keys(requestContent)[0];
+          const bodySchema = requestContent[mediaType]?.schema;
+          const id = `${method.toUpperCase()} ${path}`;
+          this.endpoints.push({
+            id,
+            category: (operation.tags || ['Other'])[0],
+            method: method.toUpperCase(),
+            path,
+            requestBase: path.startsWith(prefix) ? API_BASE : window.location.origin,
+            requestPath: path.startsWith(prefix) ? path.slice(prefix.length) || '/' : path,
+            summary: operation.summary || operation.description || id,
+            params: [...parameters.values()].map(parameter => ({
+              name: parameter.name,
+              in: parameter.in,
+              type: parameter.schema?.type || 'string',
+              required: Boolean(parameter.required),
+              default: parameter.schema?.default ?? parameter.example ?? ''
+            })),
+            body: bodySchema ? this.exampleFromSchema(bodySchema, spec) : null,
+            hasRequestBody: Boolean(operation.requestBody),
+            mediaType
+          });
+        });
+      });
+
+      this.endpoints.sort((left, right) => left.path.localeCompare(right.path) || left.method.localeCompare(right.method));
+      if (!this.endpoints.length) throw new Error('OpenAPI schema contains no operations');
+      const selectedId = this.selectedEndpoint?.id;
+      this.selectedEndpoint = this.endpoints.find(endpoint => endpoint.id === selectedId) || this.endpoints[0];
+      this.renderSidebar();
+      this.selectEndpoint(this.selectedEndpoint.id);
+    } catch (error) {
+      if (listEl) listEl.textContent = `Could not load API operations: ${error.message}`;
+      window.showToast(`API Explorer failed to load: ${error.message}`, 'danger');
+    }
+  }
+
+  exampleFromSchema(schema, spec, seen = new Set()) {
+    if (!schema) return null;
+    if (schema.$ref) {
+      const name = schema.$ref.split('/').pop();
+      if (seen.has(name)) return {};
+      const resolved = spec.components?.schemas?.[name];
+      return this.exampleFromSchema(resolved, spec, new Set([...seen, name]));
+    }
+    if (schema.example !== undefined) return schema.example;
+    if (schema.enum?.length) return schema.enum[0];
+    if (schema.default !== undefined) return schema.default;
+    if (schema.anyOf || schema.oneOf) return this.exampleFromSchema((schema.anyOf || schema.oneOf)[0], spec, seen);
+    if (schema.type === 'array') return [this.exampleFromSchema(schema.items, spec, seen)];
+    if (schema.type === 'object' || schema.properties) {
+      const required = new Set(schema.required || []);
+      return Object.fromEntries(Object.entries(schema.properties || {})
+        .filter(([name, property]) => required.has(name) || property.default !== undefined || property.enum)
+        .map(([name, property]) => [name, this.exampleFromSchema(property, spec, seen)]));
+    }
+    if (schema.type === 'integer' || schema.type === 'number') return schema.minimum ?? 1;
+    if (schema.type === 'boolean') return true;
+    if (schema.format === 'email') return 'user@example.com';
+    if (schema.format === 'date') return '2026-01-01';
+    if (schema.format === 'date-time') return '2026-01-01T00:00:00Z';
+    return schema.type === 'string' ? 'string' : null;
+  }
+
+  escapeHTML(value) {
+    return String(value ?? '').replace(/[&<>"']/g, character => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    })[character]);
   }
 
   renderSidebar() {
@@ -148,11 +240,11 @@ class ApiDocsController {
           ${cat} (${list.length})
         </div>
         ${list.map(ep => {
-          const methodColor = ep.method === 'GET' ? '#38bdf8' : (ep.method === 'POST' ? '#34d399' : '#f59e0b');
+          const methodColor = ep.method === 'GET' ? '#38bdf8' : (ep.method === 'DELETE' ? '#f87171' : (ep.method === 'POST' ? '#34d399' : '#f59e0b'));
           return `
             <div class="api-nav-endpoint ${ep.id === this.selectedEndpoint.id ? 'active' : ''}" data-endpoint-id="${ep.id}" style="display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 8px; cursor: pointer; font-size: 0.82rem;">
               <span style="font-weight: 800; font-size: 0.7rem; color: ${methodColor}; width: 38px;">${ep.method}</span>
-              <span style="font-family: var(--font-mono); color: #cbd5e1; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${ep.path}</span>
+              <span style="font-family: var(--font-mono); color: #cbd5e1; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${this.escapeHTML(ep.requestPath)}</span>
             </div>
           `;
         }).join('')}
@@ -182,11 +274,12 @@ class ApiDocsController {
     if (methodBadge) {
       methodBadge.textContent = ep.method;
       methodBadge.className = `badge badge-${ep.method.toLowerCase()}`;
-      methodBadge.style.background = ep.method === 'GET' ? 'rgba(56, 189, 248, 0.2)' : 'rgba(52, 211, 153, 0.2)';
-      methodBadge.style.color = ep.method === 'GET' ? '#38bdf8' : '#34d399';
+      const methodColor = ep.method === 'GET' ? '#38bdf8' : (ep.method === 'DELETE' ? '#f87171' : (ep.method === 'POST' ? '#34d399' : '#fbbf24'));
+      methodBadge.style.background = `${methodColor}33`;
+      methodBadge.style.color = methodColor;
     }
 
-    if (pathEl) pathEl.textContent = `/api/v1${ep.path}`;
+    if (pathEl) pathEl.textContent = ep.path;
     if (summaryEl) summaryEl.textContent = ep.summary;
 
     if (paramsList) {
@@ -195,10 +288,10 @@ class ApiDocsController {
           <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 0.84rem;">
             <div>
               <strong style="color: #f8fafc; font-family: var(--font-mono);">${p.name}</strong>
-              <span style="color: var(--text-muted); font-size: 0.76rem; margin-left: 6px;">(${p.type})</span>
+              <span style="color: var(--text-muted); font-size: 0.76rem; margin-left: 6px;">(${p.in}: ${p.type})</span>
               ${p.required ? '<span style="color: #ef4444; font-size: 0.72rem; margin-left: 4px;">required</span>' : ''}
             </div>
-            <input type="text" class="form-control" style="width: 200px; height: 32px; font-size: 0.8rem;" value="${p.default || ''}" data-param-name="${p.name}">
+            <input type="text" class="form-control" style="width: 200px; height: 32px; font-size: 0.8rem;" value="${this.escapeHTML(p.default)}" data-param-name="${this.escapeHTML(p.name)}" data-param-in="${this.escapeHTML(p.in)}" ${p.required ? 'required' : ''}>
           </div>
         `).join('');
       } else {
@@ -207,17 +300,21 @@ class ApiDocsController {
     }
 
     if (bodyBox) {
-      if (ep.body) {
+      if (ep.hasRequestBody) {
         bodyBox.style.display = 'block';
-        document.getElementById('api-doc-body-wrap').style.display = 'block';
-        bodyBox.value = JSON.stringify(ep.body, null, 2);
+        const bodyWrap = document.getElementById('api-doc-body-wrap');
+        if (bodyWrap) bodyWrap.style.display = 'block';
+        bodyBox.value = JSON.stringify(ep.body ?? {}, null, 2);
+        bodyBox.dataset.mediaType = ep.mediaType || 'application/json';
       } else {
-        document.getElementById('api-doc-body-wrap').style.display = 'none';
+        bodyBox.style.display = 'none';
+        const bodyWrap = document.getElementById('api-doc-body-wrap');
+        if (bodyWrap) bodyWrap.style.display = 'none';
       }
     }
 
     if (responseBox) {
-      responseBox.textContent = `// Click "Try It Out" to execute live request against /api/v1${ep.path}`;
+      responseBox.textContent = `// Click "Try It Out" to execute ${ep.method} ${ep.path}`;
     }
 
     if (statusBadge) {
@@ -237,54 +334,78 @@ class ApiDocsController {
     const startTime = performance.now();
 
     try {
-      let finalPath = ep.path;
-      // Handle path param replacements if any
+      let finalPath = ep.requestPath;
       const paramInputs = document.querySelectorAll('#api-doc-params-list input');
       const queryParams = new URLSearchParams();
+      const headerParams = {};
 
       paramInputs.forEach(inp => {
         const name = inp.dataset.paramName;
+        const parameterIn = inp.dataset.paramIn;
         const val = inp.value.trim();
-        if (finalPath.includes(`{${name}}`)) {
+        if (parameterIn === 'path') {
+          if (!val) throw new Error(`Required path parameter "${name}" is empty`);
           finalPath = finalPath.replace(`{${name}}`, encodeURIComponent(val));
-        } else if (val && ep.method === 'GET') {
+        } else if (parameterIn === 'query' && val) {
           queryParams.append(name, val);
+        } else if (parameterIn === 'header' && val) {
+          headerParams[name] = val;
         }
       });
 
       const qString = queryParams.toString();
       const endpointWithQuery = qString ? `${finalPath}?${qString}` : finalPath;
 
-      let bodyData = null;
-      if (ep.body && ['POST', 'PUT', 'PATCH'].includes(ep.method)) {
+      let bodyData;
+      let contentType = ep.mediaType || 'application/json';
+      if (ep.hasRequestBody) {
         const bodyText = document.getElementById('api-doc-body-input')?.value || '{}';
         try {
           bodyData = JSON.parse(bodyText);
         } catch (e) {
           throw new Error("Invalid JSON in request body");
         }
+        if (contentType === 'application/x-www-form-urlencoded') {
+          bodyData = new URLSearchParams(bodyData);
+        } else if (contentType === 'multipart/form-data') {
+          const formData = new FormData();
+          Object.entries(bodyData).forEach(([key, value]) => formData.append(key, value));
+          bodyData = formData;
+          contentType = null;
+        }
       }
 
-      const res = await api.request(endpointWithQuery, {
+      const headers = { ...headerParams };
+      if (contentType) headers['Content-Type'] = contentType;
+      if (api.token) headers.Authorization = `Bearer ${api.token}`;
+      const response = await fetch(`${ep.requestBase}${endpointWithQuery}`, {
         method: ep.method,
-        body: bodyData ? JSON.stringify(bodyData) : undefined
+        headers,
+        body: bodyData === undefined ? undefined : (bodyData instanceof FormData || bodyData instanceof URLSearchParams ? bodyData : JSON.stringify(bodyData))
       });
 
       const latency = Math.round(performance.now() - startTime);
+      const responseText = await response.text();
+      let responseData = responseText;
+      try {
+        responseData = responseText ? JSON.parse(responseText) : null;
+      } catch (e) {
+        responseData = responseText;
+      }
 
       if (statusBadge) {
         statusBadge.style.display = 'inline-block';
-        statusBadge.textContent = '200 OK';
-        statusBadge.style.background = 'rgba(16, 185, 129, 0.2)';
-        statusBadge.style.color = '#34d399';
+        statusBadge.textContent = `${response.status} ${response.statusText}`;
+        statusBadge.style.background = response.ok ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)';
+        statusBadge.style.color = response.ok ? '#34d399' : '#f87171';
       }
 
       if (latencyEl) {
         latencyEl.textContent = `${latency}ms`;
       }
 
-      responseBox.textContent = JSON.stringify(res, null, 2);
-      window.showToast(`200 OK (${latency}ms): ${ep.path}`, 'success');
+      responseBox.textContent = typeof responseData === 'string' ? responseData : JSON.stringify(responseData, null, 2);
+      window.showToast(`${response.status} ${response.statusText} (${latency}ms): ${ep.path}`, response.ok ? 'success' : 'warning');
 
     } catch (err) {
       const latency = Math.round(performance.now() - startTime);

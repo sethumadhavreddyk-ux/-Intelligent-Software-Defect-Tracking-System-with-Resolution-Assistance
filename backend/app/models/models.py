@@ -1,7 +1,7 @@
 import datetime
 import enum
 from sqlalchemy import (
-    Column, Integer, String, Text, Boolean, DateTime, ForeignKey, Enum as SQLEnum, Float
+    Column, Integer, String, Text, Boolean, DateTime, ForeignKey, Enum as SQLEnum, Float, UniqueConstraint
 )
 from sqlalchemy.orm import relationship
 from app.database import Base
@@ -82,6 +82,19 @@ class User(Base):
     comments = relationship("DefectComment", back_populates="user")
     team_memberships = relationship("TeamMember", back_populates="user", cascade="all, delete-orphan")
     notifications = relationship("Notification", back_populates="user", cascade="all, delete-orphan")
+
+
+class OAuthIdentity(Base):
+    __tablename__ = "oauth_identities"
+    __table_args__ = (UniqueConstraint("provider", "provider_subject"),)
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    provider = Column(String(30), nullable=False)
+    provider_subject = Column(String(255), nullable=False)
+    email = Column(String(120), nullable=False)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    user = relationship("User")
 
 
 class Team(Base):

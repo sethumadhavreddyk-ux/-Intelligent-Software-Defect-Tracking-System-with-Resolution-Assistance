@@ -15,7 +15,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
 
   <!-- Main Stylesheet -->
-  <link rel="stylesheet" href="/static/css/style.css">
+  <link rel="stylesheet" href="./css/style.css">
 </head>
 <body>
 
@@ -195,10 +195,13 @@
             <span class="notification-count" id="notification-badge">5</span>
           </button>
 
-          <!-- Profile Chip -->
+          <!-- Profile Chip with Role Badge -->
           <div style="display: flex; align-items: center; gap: 8px; margin-left: 6px;">
             <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150" alt="" id="navbar-user-avatar" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1.5px solid var(--accent-primary);">
-            <div style="font-size: 0.82rem; font-weight: 600; color: #f8fafc;" id="navbar-user-name">Madhav</div>
+            <div>
+              <div style="font-size: 0.82rem; font-weight: 600; color: #f8fafc;" id="navbar-user-name">Madhav</div>
+              <span class="badge" id="navbar-user-role" style="font-size: 0.68rem; cursor: pointer; background: rgba(99,102,241,0.22); color: #a5b4fc; border: 1px solid rgba(99,102,241,0.4); padding: 1px 7px; border-radius: 9999px;" onclick="adminController.openAssignRoleModal()" title="Click to Assign / Switch Role">Developer ▾</span>
+            </div>
           </div>
         </div>
       </header>
@@ -298,6 +301,12 @@
           <div class="quick-actions-bar">
             <button class="btn-quick-action" onclick="defectsController.openReportModal()">
               <span>🐞</span> <span>Create Defect</span>
+            </button>
+            <button class="btn-quick-action" onclick="adminController.openAssignRoleModal()" style="border-color: rgba(168, 85, 247, 0.4); background: rgba(168, 85, 247, 0.08);">
+              <span>⚙️</span> <span>Assign Role</span>
+            </button>
+            <button class="btn-quick-action" onclick="appController.navigateTo('integrations')" style="border-color: rgba(6, 182, 212, 0.4); background: rgba(6, 182, 212, 0.08);">
+              <span>🔗</span> <span>Integrations</span>
             </button>
             <button class="btn-quick-action" onclick="document.getElementById('btn-toggle-gemini-chat').click()">
               <span>✨</span> <span>Ask Gemini</span>
@@ -916,63 +925,129 @@
             </div>
           </div>
 
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; margin-bottom: 24px;">
-            <!-- GitHub -->
-            <div class="glass-card" style="padding: 18px;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <!-- Top Interactive Integrations Grid -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 18px; margin-bottom: 24px;">
+            <!-- 1. GitHub Integration Card -->
+            <div class="glass-card" style="padding: 20px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                 <div style="display: flex; align-items: center; gap: 8px;">
                   <span style="font-size: 1.4rem;">🐙</span>
-                  <strong style="font-size: 1rem;">GitHub</strong>
+                  <strong style="font-size: 1.05rem;">GitHub PR & Commit Sync</strong>
                 </div>
-                <span class="badge" style="background: rgba(16,185,129,0.2); color: #34d399;">Connected</span>
+                <span class="badge badge-verified">Active</span>
               </div>
-              <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 12px;">Sync PRs, commits, & auto-close defects.</p>
-              <button class="btn-secondary" style="font-size: 0.78rem; width: 100%;" onclick="window.showToast('GitHub repository sync active!', 'info')">Configure</button>
+              <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 14px;">Link GitHub pull requests and commit hashes directly to defects for automatic closure.</p>
+              
+              <div class="form-group" style="margin-bottom: 8px;">
+                <label class="form-label" style="font-size: 0.76rem;">Select Defect to Link</label>
+                <select id="github-defect-select" class="form-control" style="font-size: 0.82rem;"></select>
+              </div>
+              <div class="form-group" style="margin-bottom: 8px;">
+                <label class="form-label" style="font-size: 0.76rem;">Pull Request URL</label>
+                <input type="text" id="github-pr-url" class="form-control" placeholder="https://github.com/org/repo/pull/42" value="https://github.com/bugflow/core/pull/18" style="font-size: 0.82rem;">
+              </div>
+              <div class="form-group" style="margin-bottom: 14px;">
+                <label class="form-label" style="font-size: 0.76rem;">Commit SHA (Optional)</label>
+                <input type="text" id="github-commit-hash" class="form-control" placeholder="a1b2c3d" value="8f2a91c" style="font-size: 0.82rem; font-family: var(--font-mono);">
+              </div>
+              <button class="btn-primary" style="width: 100%; font-size: 0.82rem;" onclick="integrationsController.linkGitHub()">
+                🐙 Link GitHub Pull Request
+              </button>
             </div>
 
-            <!-- Slack -->
-            <div class="glass-card" style="padding: 18px;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <!-- 2. Slack Webhook Alerts Card -->
+            <div class="glass-card" style="padding: 20px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                 <div style="display: flex; align-items: center; gap: 8px;">
                   <span style="font-size: 1.4rem;">💬</span>
-                  <strong style="font-size: 1rem;">Slack</strong>
+                  <strong style="font-size: 1.05rem;">Slack Webhook Dispatcher</strong>
                 </div>
-                <span class="badge" style="background: rgba(16,185,129,0.2); color: #34d399;">Connected</span>
+                <span class="badge badge-verified">Active</span>
               </div>
-              <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 12px;">Broadcast defect notifications to #alerts.</p>
-              <button class="btn-secondary" style="font-size: 0.78rem; width: 100%;" onclick="integrationsController.sendSlackAlert()">Send Test Alert</button>
+              <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 14px;">Broadcast real-time incident alerts and resolution updates to engineering channels.</p>
+
+              <div class="form-group" style="margin-bottom: 8px;">
+                <label class="form-label" style="font-size: 0.76rem;">Slack Channel</label>
+                <input type="text" id="slack-channel-input" class="form-control" value="#defects-alerts" style="font-size: 0.82rem;">
+              </div>
+              <div class="form-group" style="margin-bottom: 8px;">
+                <label class="form-label" style="font-size: 0.76rem;">Associated Defect</label>
+                <select id="slack-defect-select" class="form-control" style="font-size: 0.82rem;"></select>
+              </div>
+              <div class="form-group" style="margin-bottom: 14px;">
+                <label class="form-label" style="font-size: 0.76rem;">Alert Message</label>
+                <textarea id="slack-message-input" class="form-control" rows="2" style="font-size: 0.82rem;">🔥 Critical Alert: DEF-101 payment gateway degradation identified. RCA investigation initiated.</textarea>
+              </div>
+              <button class="btn-primary" style="width: 100%; font-size: 0.82rem; background: #4a154b; border-color: #611f69;" onclick="integrationsController.sendSlackAlert()">
+                💬 Dispatch Slack Alert
+              </button>
             </div>
 
-            <!-- Microsoft Teams -->
-            <div class="glass-card" style="padding: 18px;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <!-- 3. MS Teams Card -->
+            <div class="glass-card" style="padding: 20px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                 <div style="display: flex; align-items: center; gap: 8px;">
                   <span style="font-size: 1.4rem;">👥</span>
-                  <strong style="font-size: 1rem;">MS Teams</strong>
+                  <strong style="font-size: 1.05rem;">Microsoft Teams Connect</strong>
                 </div>
-                <span class="badge" style="background: rgba(16,185,129,0.2); color: #34d399;">Connected</span>
+                <span class="badge badge-verified">Active</span>
               </div>
-              <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 12px;">Channel notifications and adaptive cards.</p>
-              <button class="btn-secondary" style="font-size: 0.78rem; width: 100%;" onclick="window.showToast('MS Teams webhook verified!', 'info')">Configure</button>
+              <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 14px;">Send adaptive triage cards and sprint status summaries directly to Teams.</p>
+
+              <div class="form-group" style="margin-bottom: 8px;">
+                <label class="form-label" style="font-size: 0.76rem;">Teams Channel</label>
+                <input type="text" id="teams-channel-input" class="form-control" value="Engineering General" style="font-size: 0.82rem;">
+              </div>
+              <div class="form-group" style="margin-bottom: 14px;">
+                <label class="form-label" style="font-size: 0.76rem;">Card Message</label>
+                <textarea id="teams-message-input" class="form-control" rows="4" style="font-size: 0.82rem;">⚡ Daily Defect Digest: 12 active defects in Sprint 5. 4 verified by QA.</textarea>
+              </div>
+              <button class="btn-primary" style="width: 100%; font-size: 0.82rem; background: #4f46e5;" onclick="integrationsController.sendTeamsAlert()">
+                👥 Dispatch MS Teams Card
+              </button>
             </div>
 
-            <!-- Jira -->
-            <div class="glass-card" style="padding: 18px;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <!-- 4. Jira 2-Way Sync Card -->
+            <div class="glass-card" style="padding: 20px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                 <div style="display: flex; align-items: center; gap: 8px;">
                   <span style="font-size: 1.4rem;">🔷</span>
-                  <strong style="font-size: 1rem;">Jira</strong>
+                  <strong style="font-size: 1.05rem;">Atlassian Jira Sync</strong>
                 </div>
-                <span class="badge" style="background: rgba(99,102,241,0.2);">Available</span>
+                <span class="badge" style="background: rgba(99,102,241,0.2); color: #818cf8;">Synchronized</span>
               </div>
-              <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 12px;">Import and 2-way sync Jira backlog issues.</p>
-              <button class="btn-secondary" style="font-size: 0.78rem; width: 100%;" onclick="window.showToast('Jira integration credentials required', 'warning')">Connect</button>
+              <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 14px;">Bidirectional issue status mapping between BugFlow and Jira Agile Backlog.</p>
+
+              <div class="form-group" style="margin-bottom: 8px;">
+                <label class="form-label" style="font-size: 0.76rem;">Jira Issue Key</label>
+                <input type="text" id="jira-key-input" class="form-control" value="PROJ-248" style="font-size: 0.82rem; font-family: var(--font-mono);">
+              </div>
+              <div class="form-group" style="margin-bottom: 8px;">
+                <label class="form-label" style="font-size: 0.76rem;">Map to BugFlow Defect</label>
+                <select id="jira-defect-select" class="form-control" style="font-size: 0.82rem;"></select>
+              </div>
+              <div class="form-group" style="margin-bottom: 14px;">
+                <label class="form-label" style="font-size: 0.76rem;">Sync Direction</label>
+                <select id="jira-sync-direction" class="form-control" style="font-size: 0.82rem;">
+                  <option value="TWO_WAY">Bidirectional (2-Way Live Sync)</option>
+                  <option value="IMPORT">Import from Jira</option>
+                  <option value="EXPORT">Export to Jira</option>
+                </select>
+              </div>
+              <button class="btn-primary" style="width: 100%; font-size: 0.82rem; background: #0052cc;" onclick="integrationsController.syncJira()">
+                🔷 Trigger Jira Issue Sync
+              </button>
             </div>
           </div>
 
           <!-- Integration Logs -->
           <div class="glass-card" style="padding: 20px;">
-            <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 14px;">Webhook & Integration Logs</h3>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+              <h3 style="font-size: 1.1rem; font-weight: 700; margin: 0;">Webhook & Integration Event Stream</h3>
+              <button class="btn-secondary" style="font-size: 0.76rem; padding: 4px 12px;" onclick="integrationsController.loadLogs()">
+                🔄 Refresh Stream
+              </button>
+            </div>
             <div class="table-responsive">
               <table class="custom-table">
                 <thead>
@@ -980,6 +1055,7 @@
                     <th>Provider</th>
                     <th>Event Type</th>
                     <th>Payload Details</th>
+                    <th>Timestamp</th>
                     <th>Status</th>
                   </tr>
                 </thead>
@@ -1083,7 +1159,7 @@
               <div class="rag-pipe-node" style="padding: 8px 12px; background: rgba(30, 41, 59, 0.8); border-radius: 8px; border: 1px solid rgba(255,255,255,0.08); text-align: center;">
                 <div style="font-size: 1rem;">📄</div>
                 <div style="font-size: 0.75rem; font-weight: 700; color: #f8fafc; margin-top: 2px;">Ingestion</div>
-                <div style="font-size: 0.65rem; color: var(--text-muted);">PDF / MD / TXT</div>
+                <div style="font-size: 0.65rem; color: var(--text-muted);">MD / TXT / JSON / LOG</div>
               </div>
               <div style="text-align: center; color: var(--text-muted); font-size: 0.9rem;">&rarr;</div>
               <div class="rag-pipe-node" style="padding: 8px 12px; background: rgba(30, 41, 59, 0.8); border-radius: 8px; border: 1px solid rgba(255,255,255,0.08); text-align: center;">
@@ -1231,7 +1307,7 @@
                 <div id="rag-file-dropzone" class="file-dropzone" style="border: 2px dashed rgba(139, 92, 246, 0.4); border-radius: 12px; padding: 40px 20px; text-align: center; cursor: pointer; transition: all 0.2s ease; background: rgba(15, 23, 42, 0.4);">
                   <div style="font-size: 2.2rem; margin-bottom: 10px;">📤</div>
                   <div style="font-weight: 700; font-size: 0.95rem; color: #f8fafc;">Drag & Drop Architecture / Runbook Document</div>
-                  <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">Supports Markdown (.md), Text (.txt), JSON, or Log files</div>
+                  <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">Supports TXT, Markdown, JSON, CSV, Log, Python, and JavaScript files</div>
                   <button type="button" class="btn-secondary" style="margin-top: 14px; font-size: 0.8rem; pointer-events: none;">
                     Browse File
                   </button>
@@ -1239,7 +1315,7 @@
                 </div>
 
                 <div style="margin-top: 16px; font-size: 0.8rem; color: var(--text-secondary); line-height: 1.45;">
-                  💡 <strong>How it works:</strong> Files are automatically read and extracted into plain text. Upon ingestion, our sliding-window chunker splits the text into 120-word semantic vectors with 25-word overlap for high retrieval accuracy.
+                  💡 <strong>How it works:</strong> Text-based files are read in your browser. Choose a word-count chunk size and overlap before indexing.
                 </div>
               </div>
 
@@ -1287,7 +1363,7 @@
                     </div>
                   </div>
 
-                  <button type="submit" class="btn-primary" style="width: 100%; background: linear-gradient(135deg, #8b5cf6, #3b82f6);">
+                  <button type="submit" id="btn-submit-ingest" class="btn-primary" style="width: 100%; background: linear-gradient(135deg, #8b5cf6, #3b82f6);">
                     <span>⚡ Vectorize & Ingest Document</span>
                   </button>
                 </form>
@@ -1308,6 +1384,8 @@
                     <option value="Payment">Payment</option>
                     <option value="Authentication">Authentication</option>
                     <option value="Database">Database</option>
+                    <option value="API / Backend">API / Backend</option>
+                    <option value="UI / UX">UI / UX</option>
                   </select>
                 </div>
                 <button type="button" class="btn-secondary" onclick="ragController.loadKnowledgeDirectory()">
@@ -1610,8 +1688,25 @@
       </div>
     </div>
 
+    <!-- Media / File Attachment Preview Bar -->
+    <div id="gemini-chat-attachments-bar" class="gemini-chat-attachments-bar" style="display: none;"></div>
+
     <form class="chat-input-bar" id="gemini-chat-form">
-      <input type="text" id="gemini-chat-input" placeholder="Ask about root cause, test cases, code fix..." autocomplete="off">
+      <!-- Media / File Upload '+' button -->
+      <button type="button" class="btn-chat-action" id="btn-gemini-chat-attach" title="Upload Media / File Attachment (+)">
+        <span style="font-size: 1.25rem; font-weight: 700; line-height: 1;">+</span>
+      </button>
+      <input type="file" id="gemini-chat-file-input" style="display: none;" multiple accept="image/*,.pdf,.txt,.log,.json,.csv,.py,.js">
+
+      <!-- Chat input field -->
+      <input type="text" id="gemini-chat-input" placeholder="Ask Gemini or describe defect context..." autocomplete="off">
+
+      <!-- Voice Assistant Microphone button -->
+      <button type="button" class="btn-chat-action" id="btn-gemini-chat-mic" title="Voice Assistant (Click to speak)">
+        <span id="gemini-mic-icon">🎙️</span>
+      </button>
+
+      <!-- Submit button -->
       <button type="submit" class="btn-primary" style="padding: 6px 14px; font-size: 0.82rem;">Send</button>
     </form>
   </div>
@@ -1908,7 +2003,15 @@
         <button class="btn-icon" onclick="document.getElementById('assign-role-dialog').close()">&times;</button>
       </div>
       <form id="assign-role-form">
+        <input type="hidden" id="assign-role-user-id-hidden">
         <div class="modal-body">
+          <div class="form-group" id="assign-role-select-user-group" style="margin-bottom: 14px;">
+            <label class="form-label">Select User to Update</label>
+            <select id="assign-role-user-select" class="form-control" style="font-size: 0.9rem;">
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+
           <div style="background: rgba(15, 23, 42, 0.6); padding: 14px; border-radius: 8px; margin-bottom: 16px; border: 1px solid var(--border-color);">
             <div style="font-size: 0.78rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600;">Target User:</div>
             <div id="assign-role-user-name" style="font-size: 1.1rem; font-weight: 700; color: #f8fafc; margin-top: 2px;"></div>
@@ -1960,95 +2063,261 @@
   </dialog>
 
   <!-- ========================================== -->
-  <!-- AUTHENTIC SOCIAL OAUTH DIALOGS (Image 2) -->
+  <!-- AUTHENTIC OFFICIAL SOCIAL OAUTH DIALOGS   -->
   <!-- ========================================== -->
 
-  <!-- Google OAuth Modal -->
+  <!-- 1. Google Official Sign-In Modal -->
   <dialog id="modal-google-oauth">
-    <div class="oauth-dialog-card" style="text-align: center;">
-      <div style="margin-bottom: 16px;">
-        <svg width="40" height="40" viewBox="0 0 24 24">
+    <div class="oauth-dialog-card google-theme">
+      <button type="button" class="oauth-close-btn" onclick="document.getElementById('modal-google-oauth').close()">&times;</button>
+      
+      <div class="oauth-brand-header">
+        <svg width="36" height="36" viewBox="0 0 24 24">
           <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
           <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
           <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
           <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
         </svg>
-      </div>
-      <h3 style="font-size: 1.35rem; font-weight: 500; color: #202124;">Sign in with Google</h3>
-      <p style="font-size: 0.88rem; color: #5f6368; margin-top: 4px; margin-bottom: 24px;">to continue to <strong>BugFlow</strong></p>
-
-      <div style="text-align: left; margin-bottom: 24px;">
-        <input type="text" class="form-control" value="madhav@bugflow.io" style="background: #fff; border: 1px solid #dadce0; color: #202124; height: 48px; border-radius: 4px;" readonly>
+        <h3 class="oauth-title">Sign in with Google</h3>
+        <p class="oauth-subtitle">Choose an account or enter custom credentials to continue to <strong>BugFlow</strong></p>
       </div>
 
-      <div style="display: flex; justify-content: space-between; align-items: center;">
-        <button type="button" style="background: none; border: none; color: #1a73e8; font-weight: 500; cursor: pointer;" onclick="document.getElementById('modal-google-oauth').close()">Cancel</button>
-        <button type="button" class="btn-primary" style="background: #1a73e8; border-radius: 4px; padding: 10px 24px;" onclick="authController.executeOAuthLogin('google')">
-          Next &rarr;
+      <!-- Quick Accounts Picker List -->
+      <div class="oauth-account-list">
+        <div class="oauth-account-item active" data-provider="google" data-email="madhav@bugflow.io" data-name="K. Sethu Madhav">
+          <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150" class="oauth-avatar" alt="Avatar">
+          <div class="oauth-account-info">
+            <div class="oauth-account-name">K. Sethu Madhav <span class="oauth-role-pill">Developer</span></div>
+            <div class="oauth-account-email">madhav@bugflow.io</div>
+          </div>
+          <span class="oauth-check-icon">✓</span>
+        </div>
+
+        <div class="oauth-account-item" data-provider="google" data-email="sarah.pm@defecttracker.com" data-name="Sarah Jenkins">
+          <img src="https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150" class="oauth-avatar" alt="Avatar">
+          <div class="oauth-account-info">
+            <div class="oauth-account-name">Sarah Jenkins <span class="oauth-role-pill">Project Manager</span></div>
+            <div class="oauth-account-email">sarah.pm@defecttracker.com</div>
+          </div>
+          <span class="oauth-check-icon"></span>
+        </div>
+
+        <div class="oauth-account-item" data-provider="google" data-email="admin@defecttracker.com" data-name="System Administrator">
+          <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150" class="oauth-avatar" alt="Avatar">
+          <div class="oauth-account-info">
+            <div class="oauth-account-name">System Administrator <span class="oauth-role-pill">Admin</span></div>
+            <div class="oauth-account-email">admin@defecttracker.com</div>
+          </div>
+          <span class="oauth-check-icon"></span>
+        </div>
+      </div>
+
+      <!-- Custom Account Toggle & Input -->
+      <div class="oauth-custom-section">
+        <div class="oauth-custom-toggle-btn" id="toggle-google-custom-account">
+          <span>+</span> <span>Use another / custom Google account</span>
+        </div>
+        <div class="oauth-custom-form-wrap" id="google-custom-form" style="display: none; margin-top: 10px;">
+          <input type="text" id="google-custom-email" class="oauth-input" placeholder="Enter any email (e.g. you@gmail.com)">
+          <input type="text" id="google-custom-name" class="oauth-input" placeholder="Your Full Name (optional)" style="margin-top: 6px;">
+        </div>
+      </div>
+
+      <div class="oauth-dialog-actions">
+        <button type="button" class="oauth-btn-secondary" onclick="document.getElementById('modal-google-oauth').close()">Cancel</button>
+        <button type="button" class="oauth-btn-primary google-blue" id="btn-submit-google-oauth">
+          <span>Sign In with Google</span> &rarr;
         </button>
+      </div>
+
+      <div class="oauth-legal-footer">
+        To continue, Google will share your name, email address, and profile picture with BugFlow.
+        <div class="oauth-links-row">
+          <span>English (United States)</span> &bull; <span>Help</span> &bull; <span>Privacy</span> &bull; <span>Terms</span>
+        </div>
       </div>
     </div>
   </dialog>
 
-  <!-- Microsoft OAuth Modal -->
+  <!-- 2. Microsoft Official Sign-In Modal -->
   <dialog id="modal-microsoft-oauth">
-    <div class="oauth-dialog-card msft-theme" style="text-align: left; max-width: 440px;">
-      <div style="margin-bottom: 16px;">
-        <svg width="24" height="24" viewBox="0 0 23 23">
+    <div class="oauth-dialog-card msft-theme">
+      <button type="button" class="oauth-close-btn" onclick="document.getElementById('modal-microsoft-oauth').close()">&times;</button>
+
+      <div class="oauth-brand-header">
+        <svg width="32" height="32" viewBox="0 0 23 23">
           <path fill="#f35325" d="M1 1h10v10H1z"/>
           <path fill="#81bc06" d="M12 1h10v10H12z"/>
           <path fill="#05a6f0" d="M1 12h10v10H1z"/>
           <path fill="#ffba08" d="M12 12h10v10H12z"/>
         </svg>
+        <h3 class="oauth-title msft-title">Sign in</h3>
+        <p class="oauth-subtitle">to continue to <strong>BugFlow Enterprise Services</strong></p>
       </div>
-      <h3 style="font-size: 1.35rem; font-weight: 600; color: #1b1b1b; margin-bottom: 4px;">Sign in</h3>
-      <p style="font-size: 0.88rem; color: #1b1b1b; margin-bottom: 20px;">to continue to BugFlow Identity Provider</p>
 
-      <input type="text" class="form-control" value="sarah.pm@defecttracker.com" style="background: #fff; border: 1px solid #868686; color: #1b1b1b; height: 42px; border-radius: 0; margin-bottom: 20px;" readonly>
+      <!-- Quick Accounts Picker List -->
+      <div class="oauth-account-list">
+        <div class="oauth-account-item active" data-provider="microsoft" data-email="sarah.pm@defecttracker.com" data-name="Sarah Jenkins">
+          <div class="oauth-msft-badge">W</div>
+          <div class="oauth-account-info">
+            <div class="oauth-account-name">Sarah Jenkins <span class="oauth-role-pill">PM</span></div>
+            <div class="oauth-account-email">sarah.pm@defecttracker.com (Work account)</div>
+          </div>
+          <span class="oauth-check-icon">✓</span>
+        </div>
 
-      <div style="display: flex; justify-content: flex-end; gap: 8px;">
-        <button type="button" class="btn-secondary" style="border-radius: 0; padding: 8px 24px;" onclick="document.getElementById('modal-microsoft-oauth').close()">Back</button>
-        <button type="button" class="btn-primary" style="background: #0067b8; border-radius: 0; padding: 8px 24px;" onclick="authController.executeOAuthLogin('microsoft')">Next</button>
+        <div class="oauth-account-item" data-provider="microsoft" data-email="madhav@bugflow.io" data-name="K. Sethu Madhav">
+          <div class="oauth-msft-badge">W</div>
+          <div class="oauth-account-info">
+            <div class="oauth-account-name">K. Sethu Madhav <span class="oauth-role-pill">Developer</span></div>
+            <div class="oauth-account-email">madhav@bugflow.io (Work account)</div>
+          </div>
+          <span class="oauth-check-icon"></span>
+        </div>
+      </div>
+
+      <!-- Custom Account Toggle & Input -->
+      <div class="oauth-custom-section">
+        <div class="oauth-custom-toggle-btn" id="toggle-msft-custom-account">
+          <span>+</span> <span>Sign in with a different Microsoft account</span>
+        </div>
+        <div class="oauth-custom-form-wrap" id="msft-custom-form" style="display: none; margin-top: 10px;">
+          <input type="text" id="msft-custom-email" class="oauth-input" placeholder="Email, phone, or Skype (e.g. user@outlook.com)">
+          <input type="password" id="msft-custom-pass" class="oauth-input" placeholder="Password or PIN" value="Microsoft@2026" style="margin-top: 6px;">
+        </div>
+      </div>
+
+      <div class="oauth-dialog-actions">
+        <button type="button" class="oauth-btn-secondary" onclick="document.getElementById('modal-microsoft-oauth').close()">Back</button>
+        <button type="button" class="oauth-btn-primary msft-blue" id="btn-submit-microsoft-oauth">
+          <span>Sign in</span>
+        </button>
+      </div>
+
+      <div class="oauth-legal-footer">
+        <div class="oauth-links-row">
+          <span>Terms of use</span> &bull; <span>Privacy & cookies</span> &bull; <span>Enterprise Single Sign-On</span>
+        </div>
       </div>
     </div>
   </dialog>
 
-  <!-- GitHub OAuth Modal -->
+  <!-- 3. GitHub Official Sign-In Modal -->
   <dialog id="modal-github-oauth">
-    <div class="oauth-dialog-card dark-theme" style="text-align: center;">
-      <div style="margin-bottom: 16px;">
-        <svg width="44" height="44" fill="#f0f6fc" viewBox="0 0 16 16">
+    <div class="oauth-dialog-card github-theme">
+      <button type="button" class="oauth-close-btn light" onclick="document.getElementById('modal-github-oauth').close()">&times;</button>
+
+      <div class="oauth-brand-header">
+        <svg width="48" height="48" fill="#f0f6fc" viewBox="0 0 16 16">
           <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
         </svg>
+        <h3 class="oauth-title light">Sign in to GitHub</h3>
+        <p class="oauth-subtitle light">to authorize <strong>BugFlow GitHub App</strong></p>
       </div>
-      <h3 style="font-size: 1.3rem; font-weight: 600; color: #f0f6fc; margin-bottom: 6px;">Sign in to GitHub</h3>
-      <p style="font-size: 0.85rem; color: #8b949e; margin-bottom: 24px;">to authorize <strong>BugFlow OAuth App</strong></p>
 
-      <button type="button" class="btn-primary" style="width: 100%; background: #238636; border-color: rgba(240,246,252,0.1); height: 42px;" onclick="authController.executeOAuthLogin('github')">
-        Authorize & Sign In as Alex Chen
-      </button>
-      <div style="margin-top: 14px;">
-        <a href="javascript:void(0)" onclick="document.getElementById('modal-github-oauth').close()" style="color: #58a6ff; font-size: 0.8rem;">Cancel</a>
+      <!-- Quick Accounts Picker List -->
+      <div class="oauth-account-list dark">
+        <div class="oauth-account-item dark active" data-provider="github" data-email="dev_alex" data-name="Alex Chen">
+          <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150" class="oauth-avatar" alt="Avatar">
+          <div class="oauth-account-info">
+            <div class="oauth-account-name light">Alex Chen <span class="oauth-role-pill">@dev_alex</span></div>
+            <div class="oauth-account-email light">alex.dev@defecttracker.com</div>
+          </div>
+          <span class="oauth-check-icon">✓</span>
+        </div>
+
+        <div class="oauth-account-item dark" data-provider="github" data-email="madhav" data-name="K. Sethu Madhav">
+          <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150" class="oauth-avatar" alt="Avatar">
+          <div class="oauth-account-info">
+            <div class="oauth-account-name light">Sethu Madhav <span class="oauth-role-pill">@madhav</span></div>
+            <div class="oauth-account-email light">madhav@bugflow.io</div>
+          </div>
+          <span class="oauth-check-icon"></span>
+        </div>
+      </div>
+
+      <!-- Custom Account Form -->
+      <div class="oauth-custom-section">
+        <div class="oauth-custom-toggle-btn light" id="toggle-github-custom-account">
+          <span>+</span> <span>Sign in with another GitHub account</span>
+        </div>
+        <div class="oauth-custom-form-wrap" id="github-custom-form" style="display: none; margin-top: 10px;">
+          <input type="text" id="github-custom-email" class="oauth-input dark" placeholder="Username or email address (e.g. octocat)">
+          <input type="password" id="github-custom-pass" class="oauth-input dark" placeholder="Password or Personal Access Token" value="ghp_oauthpass2026" style="margin-top: 6px;">
+        </div>
+      </div>
+
+      <div class="oauth-dialog-actions">
+        <button type="button" class="oauth-btn-secondary dark" onclick="document.getElementById('modal-github-oauth').close()">Cancel</button>
+        <button type="button" class="oauth-btn-primary github-green" id="btn-submit-github-oauth">
+          <span>Sign in with GitHub</span>
+        </button>
+      </div>
+
+      <div class="oauth-legal-footer light">
+        <div class="oauth-links-row">
+          <span>Terms</span> &bull; <span>Privacy</span> &bull; <span>Security</span> &bull; <span>Contact GitHub</span>
+        </div>
       </div>
     </div>
   </dialog>
 
-  <!-- LinkedIn OAuth Modal -->
+  <!-- 4. LinkedIn Official Sign-In Modal -->
   <dialog id="modal-linkedin-oauth">
-    <div class="oauth-dialog-card" style="text-align: center;">
-      <div style="margin-bottom: 16px;">
-        <svg width="42" height="42" viewBox="0 0 24 24" fill="#0a66c2">
+    <div class="oauth-dialog-card linkedin-theme">
+      <button type="button" class="oauth-close-btn" onclick="document.getElementById('modal-linkedin-oauth').close()">&times;</button>
+
+      <div class="oauth-brand-header">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="#0a66c2">
           <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
         </svg>
+        <h3 class="oauth-title linkedin-title">Sign in to LinkedIn</h3>
+        <p class="oauth-subtitle">Stay updated on your professional world & continue to <strong>BugFlow</strong></p>
       </div>
-      <h3 style="font-size: 1.3rem; font-weight: 600; color: #202124; margin-bottom: 4px;">Sign in to LinkedIn</h3>
-      <p style="font-size: 0.85rem; color: #5f6368; margin-bottom: 22px;">to connect with <strong>BugFlow</strong></p>
 
-      <button type="button" class="btn-primary" style="width: 100%; background: #0a66c2; height: 42px;" onclick="authController.executeOAuthLogin('linkedin')">
-        Sign in as Priya Sharma (QA)
-      </button>
-      <div style="margin-top: 14px;">
-        <a href="javascript:void(0)" onclick="document.getElementById('modal-linkedin-oauth').close()" style="color: #0a66c2; font-size: 0.8rem;">Cancel</a>
+      <!-- Quick Accounts Picker List -->
+      <div class="oauth-account-list">
+        <div class="oauth-account-item active" data-provider="linkedin" data-email="priya.qa@defecttracker.com" data-name="Priya Patel">
+          <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150" class="oauth-avatar" alt="Avatar">
+          <div class="oauth-account-info">
+            <div class="oauth-account-name">Priya Patel <span class="oauth-role-pill">QA Lead</span></div>
+            <div class="oauth-account-email">priya.qa@defecttracker.com</div>
+          </div>
+          <span class="oauth-check-icon">✓</span>
+        </div>
+
+        <div class="oauth-account-item" data-provider="linkedin" data-email="madhav@bugflow.io" data-name="K. Sethu Madhav">
+          <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150" class="oauth-avatar" alt="Avatar">
+          <div class="oauth-account-info">
+            <div class="oauth-account-name">K. Sethu Madhav <span class="oauth-role-pill">Developer</span></div>
+            <div class="oauth-account-email">madhav@bugflow.io</div>
+          </div>
+          <span class="oauth-check-icon"></span>
+        </div>
+      </div>
+
+      <!-- Custom Account Toggle & Input -->
+      <div class="oauth-custom-section">
+        <div class="oauth-custom-toggle-btn" id="toggle-linkedin-custom-account">
+          <span>+</span> <span>Sign in with another LinkedIn profile</span>
+        </div>
+        <div class="oauth-custom-form-wrap" id="linkedin-custom-form" style="display: none; margin-top: 10px;">
+          <input type="text" id="linkedin-custom-email" class="oauth-input" placeholder="Email or Phone (e.g. user@linkedin.com)">
+          <input type="password" id="linkedin-custom-pass" class="oauth-input" placeholder="Password" value="LinkedInPass@2026" style="margin-top: 6px;">
+        </div>
+      </div>
+
+      <div class="oauth-dialog-actions">
+        <button type="button" class="oauth-btn-secondary" onclick="document.getElementById('modal-linkedin-oauth').close()">Cancel</button>
+        <button type="button" class="oauth-btn-primary linkedin-blue" id="btn-submit-linkedin-oauth">
+          <span>Sign in with LinkedIn</span>
+        </button>
+      </div>
+
+      <div class="oauth-legal-footer">
+        <div class="oauth-links-row">
+          <span>User Agreement</span> &bull; <span>Privacy Policy</span> &bull; <span>Community Guidelines</span>
+        </div>
       </div>
     </div>
   </dialog>
@@ -2238,6 +2507,49 @@
           <div class="auth-card-title">Welcome Back</div>
           <div class="auth-card-subtitle">Sign in to your BugFlow account</div>
 
+          <!-- FRONT VOICE ASSISTANT UNLOCK STATION -->
+          <div class="voice-unlock-station" id="voice-unlock-station">
+            <div class="voice-station-header">
+              <div class="voice-station-title-group">
+                <span class="voice-ai-indicator"><span class="pulsing-voice-dot"></span> AI Voice</span>
+                <span class="voice-station-heading">Voice Assistant Unlock</span>
+              </div>
+              <span class="voice-status-pill" id="voice-station-status-pill">Ready &bull; Tap mic</span>
+            </div>
+
+            <div class="voice-station-interactive-row">
+              <button type="button" class="btn-voice-mic-main" id="btn-voice-assistant" title="Click to speak command or unlock">
+                <span class="voice-mic-icon">🎙️</span>
+                <span class="voice-mic-ring ring-1"></span>
+                <span class="voice-mic-ring ring-2"></span>
+              </button>
+
+              <div class="voice-visualizer-container">
+                <div class="voice-equalizer-bars" id="voice-equalizer-bars">
+                  <span class="bar bar-1"></span>
+                  <span class="bar bar-2"></span>
+                  <span class="bar bar-3"></span>
+                  <span class="bar bar-4"></span>
+                  <span class="bar bar-5"></span>
+                  <span class="bar bar-6"></span>
+                  <span class="bar bar-7"></span>
+                </div>
+                <div class="voice-transcript-bubble" id="voice-assistant-status">
+                  Say <strong>"Unlock BugFlow"</strong> or <strong>"Login as Developer"</strong>
+                </div>
+              </div>
+            </div>
+
+            <div class="voice-quick-actions">
+              <button type="button" class="btn-voice-quick-action" id="btn-simulate-voice-unlock">
+                <span>⚡</span> <span>Fast Voice Unlock</span>
+              </button>
+              <button type="button" class="btn-voice-quick-action" id="btn-open-voice-hud-from-station" data-switch-card="card-voice-auth">
+                <span>🎧</span> <span>Voice Biometric HUD</span>
+              </button>
+            </div>
+          </div>
+
           <!-- Email Login vs OTP Login Pills -->
           <div class="auth-tab-pill-box">
             <button class="auth-pill-tab active" data-tab="email">Email Login</button>
@@ -2298,7 +2610,7 @@
 
           <!-- Divider -->
           <div class="auth-divider-line">
-            <span>or continue with</span>
+            <span>or continue with official single sign-on</span>
           </div>
 
           <!-- 4 Social SSO Buttons (Matching Image 1 & 2) -->
@@ -2332,13 +2644,17 @@
             </button>
           </div>
 
-          <!-- Face Biometric Button -->
+          <!-- Biometric Options -->
           <button type="button" class="btn-face-biometric" id="btn-open-face-auth">
             <span>👤</span>
             <span>Use Face Authentication</span>
           </button>
 
-          <!-- QR Code Biometric Button -->
+          <button type="button" class="btn-face-biometric" id="btn-open-voice-auth" style="margin-top: 8px; border-color: rgba(6, 182, 212, 0.4); background: rgba(6, 182, 212, 0.08);">
+            <span>🎙️</span>
+            <span>Use Voice Assistant Unlock HUD</span>
+          </button>
+
           <button type="button" class="btn-face-biometric" id="btn-open-qr-auth" style="margin-top: 8px; border-color: rgba(147, 51, 234, 0.4); background: rgba(147, 51, 234, 0.08);">
             <span>📱</span>
             <span>Instant QR Code Login</span>
@@ -2466,6 +2782,75 @@
             </button>
             <button type="button" class="btn-primary" id="btn-simulate-qr-scan" style="flex: 2; padding: 10px 10px; font-size: 0.82rem; background: linear-gradient(135deg, #6366f1, #a855f7);">
               📲 Simulate Mobile Scan
+            </button>
+          </div>
+        </div>
+
+
+        <!-- ============================================== -->
+        <!-- CARD 2c: VOICE ASSISTANT BIOMETRIC HUD         -->
+        <!-- ============================================== -->
+        <div class="auth-state-card" id="card-voice-auth">
+          <button type="button" class="btn-card-back" data-switch-card="card-welcome-back">
+            <span>&larr;</span> <span>Back</span>
+          </button>
+
+          <div class="auth-card-title">Voice Assistant Unlock</div>
+          <div class="auth-card-subtitle">Speak your passphrase or target role to authenticate</div>
+
+          <!-- Cyber Acoustic HUD Box with Pulsing Concentric Rings -->
+          <div class="voice-hud-box">
+            <div class="face-corner-reticle corner-tl"></div>
+            <div class="face-corner-reticle corner-tr"></div>
+            <div class="face-corner-reticle corner-bl"></div>
+            <div class="face-corner-reticle corner-br"></div>
+            <div class="voice-radar-sweep"></div>
+
+            <div class="voice-hud-center">
+              <button type="button" class="voice-hud-mic-circle" id="voice-hud-mic-trigger">
+                <span>🎙️</span>
+              </button>
+              <div class="voice-sonic-rings">
+                <span class="sonic-ring r1"></span>
+                <span class="sonic-ring r2"></span>
+                <span class="sonic-ring r3"></span>
+              </div>
+            </div>
+
+            <!-- Voice Frequency Bars -->
+            <div class="voice-hud-frequency-spectrum" id="voice-hud-bars">
+              <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+            </div>
+          </div>
+
+          <div style="text-align: center; margin-top: 14px;">
+            <div id="voice-hud-status-text" style="font-size: 0.9rem; font-weight: 600; color: #38bdf8;">
+              Click microphone or say passphrase...
+            </div>
+            <div class="voice-hud-transcript-bubble" id="voice-hud-transcript-bubble">
+              "Say 'Unlock BugFlow' or 'Login as Developer'..."
+            </div>
+          </div>
+
+          <!-- Command Quick Chips -->
+          <div class="voice-quick-commands-grid">
+            <div class="voice-commands-label">Suggested Commands (Tap or Speak):</div>
+            <div class="voice-chip-list">
+              <button type="button" class="voice-cmd-chip" data-cmd="unlock bugflow">🗣️ "Unlock BugFlow"</button>
+              <button type="button" class="voice-cmd-chip" data-cmd="login as developer">💻 "Login as Dev"</button>
+              <button type="button" class="voice-cmd-chip" data-cmd="login as admin">👑 "Login as Admin"</button>
+              <button type="button" class="voice-cmd-chip" data-cmd="login as project manager">📋 "Login as PM"</button>
+              <button type="button" class="voice-cmd-chip" data-cmd="login as qa">🔍 "Login as QA"</button>
+              <button type="button" class="voice-cmd-chip" data-cmd="google">🌐 "Sign in Google"</button>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 8px; margin-top: 18px;">
+            <button type="button" class="btn-secondary" id="btn-voice-hud-toggle" style="flex: 1; padding: 10px 8px; font-size: 0.84rem;">
+              🎙️ Listen Now
+            </button>
+            <button type="button" class="btn-primary" id="btn-voice-hud-fast-unlock" style="flex: 2; padding: 10px 10px; font-size: 0.84rem; background: linear-gradient(135deg, #06b6d4, #6366f1);">
+              ⚡ Fast Voice Unlock
             </button>
           </div>
         </div>
@@ -2655,24 +3040,24 @@
   </div>
 
   <!-- Scripts -->
-  <script src="/static/js/api.js"></script>
-  <script src="/static/js/auth.js"></script>
-  <script src="/static/js/dashboard.js"></script>
-  <script src="/static/js/defects.js"></script>
-  <script src="/static/js/kanban.js"></script>
-  <script src="/static/js/sprints.js"></script>
-  <script src="/static/js/teams.js"></script>
-  <script src="/static/js/intelligence.js"></script>
-  <script src="/static/js/analytics.js"></script>
-  <script src="/static/js/reports.js"></script>
-  <script src="/static/js/api_docs.js"></script>
-  <script src="/static/js/gemini_chat.js"></script>
-  <script src="/static/js/calendar.js"></script>
-  <script src="/static/js/activity.js"></script>
-  <script src="/static/js/integrations.js"></script>
-  <script src="/static/js/rag.js"></script>
-  <script src="/static/js/administration.js"></script>
-  <script src="/static/js/testing.js"></script>
-  <script src="/static/js/app.js"></script>
-</body>
+  <script src="./js/api.js"></script>
+ <script src="./js/auth.js"></script>
+ <script src="./js/dashboard.js"></script>
+ <script src="./js/defects.js"></script>
+ <script src="./js/kanban.js"></script>
+ <script src="./js/sprints.js"></script>
+ <script src="./js/teams.js"></script>
+ <script src="./js/intelligence.js"></script>
+ <script src="./js/analytics.js"></script>
+ <script src="./js/reports.js"></script>
+ <script src="./js/api_docs.js"></script>
+ <script src="./js/gemini_chat.js"></script>
+ <script src="./js/calendar.js"></script>
+ <script src="./js/activity.js"></script>
+ <script src="./js/integrations.js"></script>
+ <script src="./js/rag.js"></script>
+ <script src="./js/administration.js"></script>
+ <script src="./js/testing.js"></script>
+ <script src="./js/app.js"></script>
+ </body>
 </html>

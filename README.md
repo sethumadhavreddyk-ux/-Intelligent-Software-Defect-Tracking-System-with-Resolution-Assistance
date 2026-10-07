@@ -97,6 +97,16 @@ You can use the **1-Click Quick Demo Role Switcher** on the login screen, or sig
 | **QA / Tester** | `qa_priya` | `Qa@123` | Report defects, Verify & Close defects |
 | **Reporter** | `reporter_john` | `Reporter@123` | Submit defect reports, Track status |
 
+## 🔐 Official Provider Sign-In Setup
+
+Google, Microsoft, GitHub, and LinkedIn buttons redirect to each provider's official authorization page. Provider passwords are entered only on the provider site. OAuth is disabled until a provider's client ID and secret are configured.
+
+1. Copy `.env.example` to `.env` in the project root and fill in the provider credentials you registered.
+2. Register the matching callback URL with each provider: `http://localhost:8000/api/v1/auth/oauth/{provider}/callback` (replace `{provider}` with `google`, `microsoft`, `github`, or `linkedin`).
+3. Install backend requirements with `python -m pip install -r backend/requirements.txt`, then restart the app. For Docker, recreate the API container after changing `.env`.
+
+For production, set both OAuth base URLs to your HTTPS domain, register that exact callback URL at each provider, use a strong `SECRET_KEY`, and set `SESSION_COOKIE_SECURE=true`. Do not commit `.env` or put provider secrets in frontend files.
+
 ---
 
 ## 🧪 Running Automated Tests

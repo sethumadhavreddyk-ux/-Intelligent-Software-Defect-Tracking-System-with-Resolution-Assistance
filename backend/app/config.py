@@ -10,6 +10,18 @@ class Settings(BaseSettings):
     SECRET_KEY: str = os.getenv("SECRET_KEY", "super-secret-capstone-jwt-key-2026-secure-token")
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 24 hours
+    GOOGLE_CLIENT_ID: str = ""
+    GOOGLE_CLIENT_SECRET: str = ""
+    MICROSOFT_CLIENT_ID: str = ""
+    MICROSOFT_CLIENT_SECRET: str = ""
+    MICROSOFT_TENANT_ID: str = "common"
+    GITHUB_CLIENT_ID: str = ""
+    GITHUB_CLIENT_SECRET: str = ""
+    LINKEDIN_CLIENT_ID: str = ""
+    LINKEDIN_CLIENT_SECRET: str = ""
+    OAUTH_REDIRECT_BASE_URL: str = "http://localhost:8000"
+    OAUTH_FRONTEND_URL: str = "http://localhost:8000"
+    SESSION_COOKIE_SECURE: bool = False
     
     # Database
     DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./defect_tracker.db")

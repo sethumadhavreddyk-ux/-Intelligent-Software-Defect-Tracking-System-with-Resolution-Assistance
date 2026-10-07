@@ -101,12 +101,17 @@ class AdministrationController {
     }
   }
 
+  canManageRoles() {
+    return ['Admin', 'Project Manager'].includes(api.currentUser?.role);
+  }
+
   renderUsersTable() {
     const tableBody = document.getElementById('admin-users-table-body');
     if (!tableBody) return;
 
     const countBadge = document.getElementById('admin-user-count-badge');
     if (countBadge) countBadge.textContent = `${this.users.length} Users`;
+    const canManageRoles = this.canManageRoles();
 
     if (!this.users || this.users.length === 0) {
       tableBody.innerHTML = `
@@ -160,7 +165,7 @@ class AdministrationController {
             </span>
           </td>
           <td>
-            <button class="btn-secondary" style="font-size: 0.76rem; padding: 4px 12px; border-color: ${col.border}; color: ${col.text};" onclick="adminController.openAssignRoleModal(${u.id}, '${u.full_name.replace(/'/g, "\\'")}', '${u.role}')">
+            <button class="btn-secondary" style="font-size: 0.76rem; padding: 4px 12px; border-color: ${col.border}; color: ${col.text};" ${canManageRoles ? '' : 'disabled title="Requires Admin or Project Manager role"'} onclick="adminController.openAssignRoleModal(${u.id}, '${u.full_name.replace(/'/g, "\\'")}', '${u.role}')">
               ⚙️ Assign Role
             </button>
           </td>
@@ -216,22 +221,88 @@ class AdministrationController {
     `;
   }
 
-  openAssignRoleModal(userId, fullName, currentRole) {
-    this.selectedUserIdForRole = userId;
+  async openAssignRoleModal(userId = null, fullName = null, currentRole = null) {
+    if (!this.canManageRoles()) {
+      window.showToast('Only Admins and Project Managers can assign roles', 'warning');
+      return;
+    }
+
     const dialog = document.getElementById('assign-role-dialog');
     if (!dialog) return;
 
-    document.getElementById('assign-role-user-name').textContent = fullName;
-    document.getElementById('assign-role-select').value = currentRole;
-    document.getElementById('assign-role-user-id-hidden').value = userId;
+    if (!this.users || this.users.length === 0) {
+      try {
+        this.users = await api.getUsers();
+      } catch (e) {
+        this.users = [];
+      }
+    }
+
+    const selectEl = document.getElementById('assign-role-user-select');
+    if (selectEl && this.users.length > 0) {
+      selectEl.innerHTML = this.users.map(u => `
+        <option value="${u.id}" data-name="${u.full_name}" data-role="${u.role}" ${userId === u.id || (!userId && api.currentUser?.id === u.id) ? 'selected' : ''}>
+          ${u.full_name} (${u.username}) - [${u.role}]
+        </option>
+      `).join('');
+
+      selectEl.onchange = () => {
+        const opt = selectEl.options[selectEl.selectedIndex];
+        if (opt) {
+          const uId = parseInt(opt.value);
+          const uName = opt.dataset.name;
+          const uRole = opt.dataset.role;
+          this.selectedUserIdForRole = uId;
+          document.getElementById('assign-role-user-id-hidden').value = uId;
+          document.getElementById('assign-role-user-name').textContent = uName;
+          const currBadge = document.getElementById('assign-role-current');
+          if (currBadge) currBadge.textContent = uRole;
+          document.getElementById('assign-role-select').value = uRole;
+        }
+      };
+    }
+
+    // Default target selection
+    let activeUser = null;
+    if (userId) {
+      activeUser = this.users.find(u => u.id === userId) || { id: userId, full_name: fullName, role: currentRole };
+    } else if (api.currentUser) {
+      activeUser = this.users.find(u => u.id === api.currentUser.id) || api.currentUser;
+    } else if (this.users.length > 0) {
+      activeUser = this.users[0];
+    }
+
+    if (activeUser) {
+      this.selectedUserIdForRole = activeUser.id;
+      const hiddenId = document.getElementById('assign-role-user-id-hidden');
+      if (hiddenId) hiddenId.value = activeUser.id;
+      if (selectEl) selectEl.value = activeUser.id;
+      const targetNameEl = document.getElementById('assign-role-user-name');
+      if (targetNameEl) targetNameEl.textContent = activeUser.full_name;
+      const currBadge = document.getElementById('assign-role-current');
+      if (currBadge) currBadge.textContent = activeUser.role;
+      const roleSelect = document.getElementById('assign-role-select');
+      if (roleSelect) {
+        const adminOption = roleSelect.querySelector('option[value="Admin"]');
+        if (adminOption) adminOption.disabled = api.currentUser?.role !== 'Admin';
+        if (activeUser.role) roleSelect.value = activeUser.role;
+      }
+    }
 
     dialog.showModal();
   }
 
   async handleRoleAssignmentSubmit() {
-    const userId = parseInt(document.getElementById('assign-role-user-id-hidden').value);
-    const newRole = document.getElementById('assign-role-select').value;
+    const hiddenIdVal = document.getElementById('assign-role-user-id-hidden')?.value;
+    const selectVal = document.getElementById('assign-role-user-select')?.value;
+    const userId = parseInt(hiddenIdVal || selectVal);
+    const newRole = document.getElementById('assign-role-select')?.value;
     const dialog = document.getElementById('assign-role-dialog');
+
+    if (!userId || isNaN(userId)) {
+      window.showToast('Please select a valid user to assign the role', 'warning');
+      return;
+    }
 
     try {
       const updatedUser = await api.assignUserRole(userId, newRole);
@@ -239,7 +310,7 @@ class AdministrationController {
       if (dialog) dialog.close();
 
       // If updating current user's role, update local session & navbar badge
-      if (api.currentUser && api.currentUser.id === userId) {
+      if (api.currentUser && (api.currentUser.id === userId || api.currentUser.username === updatedUser.username)) {
         api.currentUser.role = newRole;
         localStorage.setItem('currentUser', JSON.stringify(api.currentUser));
         window.authController?.updateUserUI(api.currentUser);

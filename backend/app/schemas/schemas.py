@@ -1,6 +1,6 @@
 import datetime
 from typing import List, Optional, Any, Dict
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import AliasChoices, BaseModel, EmailStr, Field
 from app.models.models import (
     UserRole, DefectStatus, DefectPriority, DefectSeverity, DefectCategory, DefectType, SprintStatus
 )
@@ -32,7 +32,7 @@ class UserResponse(UserBase):
         from_attributes = True
 
 class UserLogin(BaseModel):
-    username_or_email: str
+    username_or_email: str = Field(validation_alias=AliasChoices("username_or_email", "username"))
     password: str
 
 class Token(BaseModel):
@@ -60,6 +60,17 @@ class FaceAuthRequest(BaseModel):
     email_or_username: str
     face_detected: bool = True
     confidence: float = 0.95
+
+class OAuthLoginRequest(BaseModel):
+    email_or_username: Optional[str] = None
+    full_name: Optional[str] = None
+    avatar_url: Optional[str] = None
+
+class VoiceAuthRequest(BaseModel):
+    command: Optional[str] = None
+    passphrase: Optional[str] = None
+    email_or_username: Optional[str] = None
+    role: Optional[str] = None
 
 # --- TEAM SCHEMAS ---
 class TeamBase(BaseModel):
@@ -477,6 +488,8 @@ class KnowledgeDocumentCreate(BaseModel):
     summary: Optional[str] = None
     tags: Optional[str] = None
     author: Optional[str] = "Engineer"
+    chunk_size: int = Field(default=120, ge=40, le=400)
+    chunk_overlap: int = Field(default=25, ge=0, le=100)
 
 class KnowledgeDocumentResponse(BaseModel):
     id: int
