@@ -81,7 +81,7 @@ cd defect-tracker
 
 The system will start on :
 * **Web UI:** ([https://bugflow-ai-defect-tracker-frontend.vercel.app].(https://bugflow-ai-defect-tracker-frontend.vercel.app/))
-* **Interactive Swagger API Docs:** ([https://intelligent-software-defect-tracking.onrender.com/doc].(https://intelligent-software-defect-tracking.onrender.com/doc))
+* **Interactive Swagger API Docs:** ([https://intelligent-software-defect-tracking.onrender.com/docs].(https://intelligent-software-defect-tracking.onrender.com/docs))
 
 ---
 
@@ -137,7 +137,7 @@ Run with PostgreSQL and pgvector using Docker Compose:
 ```bash
 docker-compose up --build
 ```
-* API & UI:[(https://intelligent-software-defect-tracking.onrender.com/doc)](https://intelligent-software-defect-tracking.onrender.com/doc)
+* API & UI:[(https://intelligent-software-defect-tracking.onrender.com/docs)](https://intelligent-software-defect-tracking.onrender.com/docs)
 * PostgreSQL:  (database: `defect_tracking_db`)
 
 ---
